@@ -4,14 +4,13 @@ import java.io.File;
 
 public final class ConfigManager {
 
-    private ConfigManager() {
-    }
+  private ConfigManager() {}
 
-    public static ConfigRoot load(File jsonFile) {
-        return JsonConfigLoader.load(jsonFile);
-    }
+  public static JsonTree load(File jsonFile) {
+    return JsonConfigLoader.load(jsonFile);
+  }
 
-    public static ConfigRoot loadDefault() {
-        return JsonConfigLoader.loadDefault();
-    }
+  public static void load(File jsonFile, Object config) {
+    ReflectionMapper.populate(load(jsonFile), config);
+  }
 }

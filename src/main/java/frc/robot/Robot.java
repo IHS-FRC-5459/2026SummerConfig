@@ -7,14 +7,20 @@
 
 package frc.robot;
 
+import edu.wpi.first.networktables.NetworkTableListener;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import java.io.File;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+import org.team5459.config.ConfigManager;
+import org.team5459.config.JsonConfigSaver;
+import org.team5459.config.NetworkTableSync;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -25,6 +31,15 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
+  private NetworkTableListener[] configListeners;
+  private final ReflectionTestConfig reflectionConfig = new ReflectionTestConfig();
+  private final File reflectionConfigFile =
+      new File(Filesystem.getDeployDirectory(), "reflection-test-config.json");
+
+  public static final class ReflectionTestConfig {
+    public double speed = 4.5;
+    public int id = 5;
+  }
 
   public Robot() {
     // Record metadata
@@ -89,9 +104,25 @@ public class Robot extends LoggedRobot {
     // Threads.setCurrentThreadPriority(false, 10);
   }
 
+  /** This function is called once when the robot is first started up. */
+  @Override
+  public void robotInit() {}
+
   /** This function is called once when the robot is disabled. */
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    ConfigManager.load(reflectionConfigFile, reflectionConfig);
+    NetworkTableSync.publish(reflectionConfig);
+    if (configListeners == null) {
+      configListeners =
+          NetworkTableSync.listen(
+              reflectionConfig,
+              () -> {
+                JsonConfigSaver.save(reflectionConfigFile, reflectionConfig);
+                System.out.println("Saved: " + reflectionConfigFile.getAbsolutePath());
+              });
+    }
+  }
 
   /** This function is called periodically when disabled. */
   @Override

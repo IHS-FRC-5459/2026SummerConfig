@@ -1,19 +1,20 @@
 package org.team5459.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public final class JsonConfigLoader {
 
-    private JsonConfigLoader() {
-    }
+  private JsonConfigLoader() {}
 
-    public static ConfigRoot load(File jsonFile) {
-        // TODO: parse JSON from file into ConfigRoot
-        throw new UnsupportedOperationException("Not implemented yet");
+  public static JsonTree load(File jsonFile) {
+    try {
+      return new JsonTree(new ObjectMapper().readTree(jsonFile));
+    } catch (IOException e) {
+      throw new UncheckedIOException(
+          "Unable to read config file: " + jsonFile.getAbsolutePath(), e);
     }
-
-    public static ConfigRoot loadDefault() {
-        // TODO: locate deploy/config.json or another default path and load it
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
+  }
 }
