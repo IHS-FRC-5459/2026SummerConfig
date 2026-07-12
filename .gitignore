@@ -185,3 +185,6 @@ compile_commands.json
 
 # Version file
 src/main/java/frc/robot/BuildConstants.java
+
+#Custom stuff from 5459
+src/main/java/org/team5459/config/plan.md
