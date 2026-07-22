@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import edu.wpi.first.math.geometry.Rotation2d;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.team5459.config.typed.ConfigDocument;
-import org.team5459.config.typed.TypedConfigLoader;
 
 /** Verifies step 2: typed JSON files load into a document. */
 class Step2TypedConfigLoaderTest {

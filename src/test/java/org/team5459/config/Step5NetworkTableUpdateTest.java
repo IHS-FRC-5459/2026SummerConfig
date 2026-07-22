@@ -16,10 +16,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
-import org.team5459.config.typed.ConfigDocument;
-import org.team5459.config.typed.TypedConfigLoader;
-import org.team5459.config.typed.TypedConfigSaver;
-import org.team5459.config.typed.TypedNetworkTableSync;
 
 /** Verifies step 5: remote NetworkTables edits update the document and save clean JSON. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

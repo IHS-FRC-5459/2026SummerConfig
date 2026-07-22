@@ -15,12 +15,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.team5459.config.typed.ColorNode;
-import org.team5459.config.typed.ConfigDocument;
-import org.team5459.config.typed.DoubleNode;
-import org.team5459.config.typed.PIDControllerNode;
-import org.team5459.config.typed.Rotation2dNode;
-import org.team5459.config.typed.TypedConfigLoader;
+import org.team5459.config.types.ColorNode;
+import org.team5459.config.types.DoubleNode;
+import org.team5459.config.types.PIDControllerNode;
+import org.team5459.config.types.Rotation2dNode;
 
 /** Verifies step 3: loaded typed values are usable through explicit document getters. */
 class Step3ConfigDocumentTest {

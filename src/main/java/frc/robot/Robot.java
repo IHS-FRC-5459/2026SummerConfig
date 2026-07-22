@@ -18,10 +18,10 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
-import org.team5459.config.typed.ConfigDocument;
-import org.team5459.config.typed.TypedConfigLoader;
-import org.team5459.config.typed.TypedConfigSaver;
-import org.team5459.config.typed.TypedNetworkTableSync;
+import org.team5459.config.ConfigDocument;
+import org.team5459.config.TypedConfigLoader;
+import org.team5459.config.TypedConfigSaver;
+import org.team5459.config.TypedNetworkTableSync;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to

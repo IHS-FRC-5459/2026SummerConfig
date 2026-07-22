@@ -6,9 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.team5459.config.typed.ConfigDocument;
-import org.team5459.config.typed.TypedConfigLoader;
-import org.team5459.config.typed.TypedNetworkTableSync;
 
 /** Verifies step 4: typed configuration values publish to nested NetworkTables paths. */
 class Step4NetworkTablePublishTest {
