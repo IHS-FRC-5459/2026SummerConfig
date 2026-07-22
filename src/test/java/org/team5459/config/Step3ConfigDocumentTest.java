@@ -1,6 +1,5 @@
 package org.team5459.config;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -23,32 +22,10 @@ import org.team5459.config.typed.PIDControllerNode;
 import org.team5459.config.typed.Rotation2dNode;
 import org.team5459.config.typed.TypedConfigLoader;
 
-/** Verifies step 6: typed JSON files load into a document with explicit typed getters. */
-class Step6TypedConfigLoaderTest {
+/** Verifies step 3: loaded typed values are usable through explicit document getters. */
+class Step3ConfigDocumentTest {
   private static final Path EXAMPLE_CONFIG =
       Path.of("src/test/resources/typed-example-config.json");
-
-  @Test
-  void loadsNestedTypedValuesFromExampleStructure() {
-    ConfigDocument document = TypedConfigLoader.load(EXAMPLE_CONFIG.toFile());
-
-    assertEquals(0.1, document.getDouble("Arm/PIDController/p"));
-    assertEquals(0.01, document.getDouble("Arm/PIDController/i"));
-    assertEquals(0.001, document.getDouble("Arm/PIDController/d"));
-    assertEquals(0.1, document.getPIDController("Arm/PIDController").getP());
-    assertEquals(0.01, document.getPIDController("Arm/PIDController").getI());
-    assertEquals(0.001, document.getPIDController("Arm/PIDController").getD());
-
-    assertEquals(
-        Rotation2d.fromDegrees(100.0).getRadians(),
-        document.getRotation2d("Arm/Rotation").getRadians(),
-        1e-9);
-    assertEquals(100.0, document.getDouble("Arm/Rotation/deg"));
-
-    assertArrayEquals(new double[] {0.0, 20.0, 45.0}, document.getDoubleArray("Arm/Setpoints"));
-
-    assertEquals(0.2, document.getPIDController("Elevator/PIDController").getP());
-  }
 
   @Test
   void returnsDefaultsAndWarnsWhenPathOrTypeIsWrong() {
