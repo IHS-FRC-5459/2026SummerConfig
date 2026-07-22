@@ -10,7 +10,22 @@ import edu.wpi.first.units.measure.Distance;
 import java.util.Map;
 import org.team5459.config.types.*;
 
-/** Reads typed child nodes from a composite config entry. */
+/**
+ * Reads strongly typed child fields from a composite node's {@code value} map.
+ *
+ * <p>Each {@code read*} method follows the same contract:
+ *
+ * <ul>
+ *   <li>If the named child exists and has the expected node type, its value is returned.
+ *   <li>If the child exists but has the wrong type, {@link ConfigWarnings#warnWrongFieldType} is
+ *       logged and the supplied default is returned.
+ *   <li>If the child is missing, {@link ConfigWarnings#warnMissingField} is logged and the default
+ *       is returned.
+ * </ul>
+ *
+ * <p>The {@code typeName} passed to the constructor appears in warning messages so logs identify
+ * which composite type failed validation.
+ */
 public final class ConfigFieldReader {
 
   private final Map<String, ConfigNode> fields;

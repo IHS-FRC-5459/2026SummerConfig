@@ -3,7 +3,16 @@ package org.team5459.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 
-/** Composite node that rebuilds an immutable value whenever its fields change. */
+/**
+ * Composite node that caches an immutable {@code T} rebuilt from child fields.
+ *
+ * <p>Subclasses implement {@link #buildValue()} once; {@link #syncValue()} stores the result in
+ * {@link #getValue()}. Use the typed accessor on the node (for example {@code getPose()}) or the
+ * matching {@link ConfigDocument} getter at the document level.
+ *
+ * <p>Unlike live controller nodes, each sync produces a fresh value object. Remote edits to child
+ * scalars therefore propagate automatically without extra subsystem code.
+ */
 public abstract class ValueConfigNode<T> extends CompositeConfigNode {
 
   private T value;

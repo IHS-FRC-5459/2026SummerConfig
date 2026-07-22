@@ -8,7 +8,18 @@ import java.io.IOException;
 import java.util.Map;
 import org.team5459.config.types.*;
 
-/** Writes typed config files without Jackson bean serialization. */
+/**
+ * Writes typed config files using explicit JSON generation.
+ *
+ * <p>Jackson deserialization is used for loading, but saving goes through this writer so only the
+ * schema fields {@code type} and {@code value} are persisted. That avoids leaking runtime-only
+ * bean properties such as {@code controller}, {@code rotation}, or {@code childEntries} that
+ * appear on node getters.
+ *
+ * <p>The output mirrors the on-disk format expected by {@link TypedConfigLoader}: folders and
+ * composites become nested objects, while scalar and array nodes write their payload directly as
+ * the {@code value}.
+ */
 final class ConfigJsonWriter {
 
   private static final JsonFactory JSON_FACTORY = new JsonFactory();

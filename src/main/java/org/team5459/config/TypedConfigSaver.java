@@ -4,7 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-/** Saves typed configuration documents back to JSON files. */
+/**
+ * Persists an in-memory {@link ConfigDocument} back to disk.
+ *
+ * <p>Saving uses {@link ConfigJsonWriter} rather than Jackson serialization so the file contains
+ * only the typed schema. This keeps round-trips stable even when node classes expose extra runtime
+ * getters.
+ */
 public final class TypedConfigSaver {
 
   private TypedConfigSaver() {}

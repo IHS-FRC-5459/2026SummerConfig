@@ -10,7 +10,13 @@ import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 import org.team5459.config.ValueConfigNode;
 
-/** A {@link Pose2d} backed by typed translation and rotation fields. */
+/**
+ * {@link Pose2d} built from typed translation and rotation child fields.
+ *
+ * <p>Translation may be supplied either as a nested {@code Translation2d} or inline {@code x}/{@code
+ * y} doubles. Rotation accepts, in priority order: nested {@code rotation}, {@code deg}, {@code
+ * heading}, or defaults to zero.
+ */
 public final class Pose2dNode extends ValueConfigNode<Pose2d> {
 
   @JsonCreator

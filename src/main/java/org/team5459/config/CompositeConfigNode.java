@@ -6,7 +6,16 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Base class for typed config entries backed by named child nodes. */
+/**
+ * Config entry whose JSON {@code value} is an object of named child nodes.
+ *
+ * <p>Composite nodes are the bridge between typed JSON fields and runtime objects. During {@link
+ * #initialize()}, every child is initialized first, then {@link #syncValue()} rebuilds the parent's
+ * runtime state from the current child values.
+ *
+ * <p>When NetworkTables updates a scalar child, {@link #applyFieldChanges()} re-runs {@link
+ * #syncValue()} so parent objects (poses, feedforwards, constraints, etc.) stay consistent.
+ */
 public abstract class CompositeConfigNode extends ConfigNode {
 
   private final Map<String, ConfigNode> fields;

@@ -7,7 +7,12 @@ import java.io.UncheckedIOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Loads typed configuration files into a {@link ConfigDocument}. */
+/**
+ * Entry point for reading typed JSON configuration files.
+ *
+ * <p>After Jackson parses the root object map, every node tree is initialized so composite values
+ * and live controllers reflect the loaded field data before the {@link ConfigDocument} is returned.
+ */
 public final class TypedConfigLoader {
 
   private TypedConfigLoader() {}

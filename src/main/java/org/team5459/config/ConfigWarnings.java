@@ -1,6 +1,17 @@
 package org.team5459.config;
 
-/** Logs configuration warnings without failing robot startup. */
+/**
+ * Centralized warning output for configuration problems.
+ *
+ * <p>The typed config system prefers logging and continuing over throwing during robot startup.
+ * Warnings are written to {@code System.err} with a {@code [Config]} prefix so they are easy to
+ * spot in driver station logs or test output.
+ *
+ * <p>Path-level warnings ({@link #warnMissingPath}, {@link #warnTypeMismatch}, {@link
+ * #warnNotNavigable}) come from {@link ConfigDocument} lookups. Field-level warnings ({@link
+ * #warnMissingField}, {@link #warnWrongFieldType}) come from {@link ConfigFieldReader} while
+ * building composite values.
+ */
 public final class ConfigWarnings {
 
   private ConfigWarnings() {}

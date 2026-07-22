@@ -9,7 +9,12 @@ import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 import org.team5459.config.ValueConfigNode;
 
-/** A {@link Rotation2d} backed by typed {@code deg} or {@code rad} fields. */
+/**
+ * {@link Rotation2d} using either {@code deg} or {@code rad} child fields.
+ *
+ * <p>{@code deg} is preferred when both are supplied. {@link #getRotation()} exposes the cached
+ * value for nested reads through {@link org.team5459.config.ConfigFieldReader}.
+ */
 public final class Rotation2dNode extends ValueConfigNode<Rotation2d> {
 
   @JsonCreator

@@ -11,7 +11,12 @@ import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 import org.team5459.config.ValueConfigNode;
 
-/** An {@link Angle} measure backed by typed {@code deg} or {@code rad} fields. */
+/**
+ * {@link Angle} measure using either {@code deg} or {@code rad} child fields.
+ *
+ * <p>If both are present, {@code deg} wins because it is checked first during {@link
+ * #buildValue()}.
+ */
 public final class AngleNode extends ValueConfigNode<Angle> {
 
   @JsonCreator

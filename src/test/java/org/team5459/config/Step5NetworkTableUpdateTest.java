@@ -17,7 +17,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Verifies step 5: remote NetworkTables edits update the document and save clean JSON. */
+/**
+ * Step 5 — remote NetworkTables edits and schema-only JSON save.
+ *
+ * <p>Starts a robot-side NT server and a separate dashboard client instance so remote {@code
+ * kValueRemote} events exercise the same path as Elastic editing {@code /Config}. Also verifies
+ * {@link TypedConfigSaver} does not persist runtime-only Jackson properties.
+ */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class Step5NetworkTableUpdateTest {
   private static final int SERVER_PORT = 1760;

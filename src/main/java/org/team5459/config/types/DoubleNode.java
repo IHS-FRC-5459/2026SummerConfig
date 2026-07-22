@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.team5459.config.ConfigNode;
 
-/** A {@code double} configuration value. */
+/** A {@code double} leaf value editable over NetworkTables. */
 public final class DoubleNode extends ConfigNode {
 
   private double value;

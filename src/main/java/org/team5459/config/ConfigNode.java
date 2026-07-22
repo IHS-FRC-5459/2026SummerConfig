@@ -8,10 +8,21 @@ import java.util.Map;
 import org.team5459.config.types.FolderNode;
 
 /**
- * A single typed entry in a configuration file.
+ * Root of the typed configuration tree.
  *
- * <p>Each JSON object contains a {@code type} discriminator and a {@code value} payload. Jackson
- * maps the discriminator to a concrete node class registered in {@link ConfigTypeRegistry}.
+ * <p>Every JSON entry uses the same envelope:
+ *
+ * <pre>{@code
+ * { "type": "<discriminator>", "value": <payload> }
+ * }</pre>
+ *
+ * <p>Jackson reads the {@code type} property and selects a concrete subclass registered in {@link
+ * ConfigTypeRegistry}. After deserialization, {@link #initialize()} (or {@link
+ * #initializeTree(ConfigNode)} for an entire document) builds runtime state such as live PID
+ * controllers or cached WPILib values.
+ *
+ * <p>Only nodes that expose {@link #getChildEntries()} participate in slash-separated path lookup
+ * performed by {@link ConfigPath}.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonAutoDetect(

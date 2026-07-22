@@ -10,7 +10,12 @@ import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 import org.team5459.config.ValueConfigNode;
 
-/** A {@link Pose3d} backed by typed translation and rotation fields. */
+/**
+ * {@link Pose3d} with the same flexible field layouts as {@link Pose2dNode}, extended to 3D.
+ *
+ * <p>Translation accepts nested {@code translation} or inline {@code x}/{@code y}/{@code z}.
+ * Rotation accepts a nested {@code Rotation3d} child.
+ */
 public final class Pose3dNode extends ValueConfigNode<Pose3d> {
 
   @JsonCreator

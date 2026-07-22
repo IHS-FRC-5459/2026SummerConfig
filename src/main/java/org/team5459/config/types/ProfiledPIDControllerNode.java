@@ -10,7 +10,13 @@ import org.team5459.config.CompositeConfigNode;
 import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 
-/** A live {@link ProfiledPIDController} backed by typed PID and constraint fields. */
+/**
+ * Live {@link ProfiledPIDController} backed by PID gains, period, and trapezoid constraints.
+ *
+ * <p>Constraints may be supplied either as a nested {@code TrapezoidProfile.Constraints} node or as
+ * inline {@code maxVelocity}/{@code maxAcceleration} doubles. The controller is created lazily on
+ * first access and then updated in place during {@link #syncValue()}.
+ */
 public final class ProfiledPIDControllerNode extends CompositeConfigNode {
 
   private ProfiledPIDController controller;

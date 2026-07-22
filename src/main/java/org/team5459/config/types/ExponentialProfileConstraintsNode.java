@@ -8,7 +8,13 @@ import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 import org.team5459.config.ValueConfigNode;
 
-/** An {@link ExponentialProfile.Constraints} backed by typed input and gain fields. */
+/**
+ * {@link ExponentialProfile.Constraints} with two supported JSON layouts.
+ *
+ * <p>When field {@code A} is present, constraints are built with {@link
+ * ExponentialProfile.Constraints#fromStateSpace}. Otherwise {@link
+ * ExponentialProfile.Constraints#fromCharacteristics} is used with {@code kV}/{@code kA}.
+ */
 public final class ExponentialProfileConstraintsNode
     extends ValueConfigNode<ExponentialProfile.Constraints> {
 

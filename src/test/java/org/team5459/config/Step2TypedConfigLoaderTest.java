@@ -7,7 +7,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
-/** Verifies step 2: typed JSON files load into a document. */
+/**
+ * Step 2 — load typed JSON into a {@link ConfigDocument}.
+ *
+ * <p>Uses {@code src/test/resources/typed-example-config.json} to verify nested folders, composite
+ * PID fields, geometry nodes, and array values deserialize to the expected runtime numbers.
+ */
 class Step2TypedConfigLoaderTest {
   private static final Path EXAMPLE_CONFIG =
       Path.of("src/test/resources/typed-example-config.json");

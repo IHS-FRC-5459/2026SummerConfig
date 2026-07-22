@@ -20,7 +20,12 @@ import org.team5459.config.types.DoubleNode;
 import org.team5459.config.types.PIDControllerNode;
 import org.team5459.config.types.Rotation2dNode;
 
-/** Verifies step 3: loaded typed values are usable through explicit document getters. */
+/**
+ * Step 3 — read loaded values through {@link ConfigDocument} getters and direct node access.
+ *
+ * <p>Covers default/warn behavior for bad paths, live {@link PIDController} identity, path
+ * resolution to concrete node types, and representative WPILib composites loaded from inline JSON.
+ */
 class Step3ConfigDocumentTest {
   private static final Path EXAMPLE_CONFIG =
       Path.of("src/test/resources/typed-example-config.json");

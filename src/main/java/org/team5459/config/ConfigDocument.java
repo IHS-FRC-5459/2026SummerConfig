@@ -55,8 +55,16 @@ import org.team5459.config.types.*;
 /**
  * Loaded typed configuration document.
  *
- * <p>Use the explicit typed getters to retrieve live values from slash-separated paths such as
- * {@code Arm/PIDController}.
+ * <p>This is the primary API surface for robot code. Paths use forward slashes and mirror folder
+ * structure in JSON, for example {@code Arm/PIDController/p} or {@code Elevator/PIDController}.
+ *
+ * <p>Each typed getter resolves the path, verifies the node class, and returns either the runtime
+ * value or a safe default. Wrong or missing entries trigger {@link ConfigWarnings} rather than
+ * exceptions. Live objects such as {@link PIDController} instances are shared across repeated
+ * getter calls for the same path.
+ *
+ * <p>Use {@link #getNode(String)} when subsystem code needs direct access to a {@link ConfigNode}
+ * for mutation or NetworkTables-driven resync.
  */
 public final class ConfigDocument {
 
@@ -410,10 +418,18 @@ public final class ConfigDocument {
         "Trajectory.State");
   }
 
+  /** Root entries keyed by top-level JSON field names. Used by save and NetworkTables sync. */
   Map<String, ConfigNode> getRootEntries() {
     return root;
   }
 
+  /**
+   * Shared typed-getter implementation.
+   *
+   * <p>When the resolved node matches {@code nodeType}, {@code extractor} pulls the runtime value.
+   * Otherwise a warning is logged (if a node existed but had the wrong type) and {@code
+   * defaultValue} is returned.
+   */
   private <T, N extends ConfigNode> T getTypedNode(
       String path, Class<N> nodeType, Function<N, T> extractor, T defaultValue, String typeName) {
     ConfigNode node = getNode(path);

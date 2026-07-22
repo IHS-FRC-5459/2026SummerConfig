@@ -10,7 +10,11 @@ import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 import org.team5459.config.ValueConfigNode;
 
-/** A {@link Transform3d} backed by typed translation and rotation fields. */
+/**
+ * {@link Transform3d} with nested or inline translation plus a nested {@code Rotation3d}.
+ *
+ * <p>Matches the 3D counterpart of {@link Transform2dNode}'s flexible translation layout.
+ */
 public final class Transform3dNode extends ValueConfigNode<Transform3d> {
 
   @JsonCreator

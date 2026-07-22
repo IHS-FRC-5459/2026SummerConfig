@@ -10,7 +10,12 @@ import org.team5459.config.ConfigNode;
 import org.team5459.config.ConfigWarnings;
 import org.team5459.config.ValueConfigNode;
 
-/** A {@link Trajectory.State} backed by typed trajectory state fields. */
+/**
+ * {@link Trajectory.State} requiring a nested {@code Pose2d} child named {@code poseMeters}.
+ *
+ * <p>Scalar timing, velocity, acceleration, and curvature fields are read with {@link
+ * ConfigFieldReader}. A missing or mistyped pose logs a warning and uses {@link Pose2d#kZero}.
+ */
 public final class TrajectoryStateNode extends ValueConfigNode<Trajectory.State> {
 
   @JsonCreator

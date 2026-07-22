@@ -10,7 +10,12 @@ import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 import org.team5459.config.ValueConfigNode;
 
-/** A {@link Transform2d} backed by typed translation and rotation fields. */
+/**
+ * {@link Transform2d} with flexible translation and rotation field layouts.
+ *
+ * <p>Translation accepts nested {@code translation} or inline {@code x}/{@code y}. Rotation
+ * accepts nested {@code rotation} and/or a top-level {@code deg} override.
+ */
 public final class Transform2dNode extends ValueConfigNode<Transform2d> {
 
   @JsonCreator

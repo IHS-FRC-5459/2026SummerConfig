@@ -2,7 +2,13 @@ package org.team5459.config;
 
 import java.util.Map;
 
-/** Resolves slash-separated paths against a typed configuration tree. */
+/**
+ * Resolves slash-separated paths such as {@code Arm/PIDController/p} against a config tree.
+ *
+ * <p>Path resolution walks folder and composite child maps segment by segment. If any segment is
+ * missing, blank, or reached through a node that cannot contain children, {@link ConfigWarnings}
+ * logs a message and {@code null} is returned so callers can fall back to defaults.
+ */
 final class ConfigPath {
 
   private ConfigPath() {}

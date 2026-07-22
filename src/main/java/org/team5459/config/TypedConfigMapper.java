@@ -5,7 +5,13 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/** Shared Jackson configuration for typed config files. */
+/**
+ * Shared Jackson {@link ObjectMapper} configured for typed config files.
+ *
+ * <p>Visibility is restricted to creators so only {@code @JsonCreator} constructors and {@code
+ * @JsonProperty} parameters participate in (de)serialization. Unknown JSON properties are ignored
+ * to tolerate hand-edited files. Subtype registration is delegated to {@link ConfigTypeRegistry}.
+ */
 final class TypedConfigMapper {
 
   private static final ObjectMapper MAPPER = createMapper();

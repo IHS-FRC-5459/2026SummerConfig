@@ -9,7 +9,12 @@ import org.team5459.config.ConfigNode;
 import org.team5459.config.ConfigWarnings;
 import org.team5459.config.ValueConfigNode;
 
-/** A {@link Rotation3d} backed by a nested {@link Quaternion} or roll/pitch/yaw fields. */
+/**
+ * {@link Rotation3d} built from either a nested {@link Quaternion} or roll/pitch/yaw doubles.
+ *
+ * <p>When {@code quaternion} is present it takes precedence. A wrong node type under {@code
+ * quaternion} logs a warning and yields the zero rotation.
+ */
 public final class Rotation3dNode extends ValueConfigNode<Rotation3d> {
 
   @JsonCreator

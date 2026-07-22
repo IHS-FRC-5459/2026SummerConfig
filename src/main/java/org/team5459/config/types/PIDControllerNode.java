@@ -9,7 +9,13 @@ import org.team5459.config.CompositeConfigNode;
 import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 
-/** A live {@link PIDController} backed by typed {@code p}, {@code i}, and {@code d} fields. */
+/**
+ * Live {@link PIDController} backed by typed {@code p}, {@code i}, and {@code d} child fields.
+ *
+ * <p>Unlike {@link ValueConfigNode} types, this node keeps one mutable controller instance for the
+ * lifetime of the document. {@link #getController()} always returns that same object, which makes
+ * it safe for subsystems to hold a reference across loops and NetworkTables edits.
+ */
 public final class PIDControllerNode extends CompositeConfigNode {
 
   private final PIDController controller = new PIDController(0.0, 0.0, 0.0);

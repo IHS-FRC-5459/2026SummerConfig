@@ -7,7 +7,20 @@ import java.util.List;
 import java.util.Map;
 import org.team5459.config.types.*;
 
-/** Registers every supported typed config discriminator with Jackson. */
+/**
+ * Maps JSON {@code type} discriminators to concrete {@link ConfigNode} classes for Jackson.
+ *
+ * <p>Every supported type string and its node class must be listed in {@link #NAMED_TYPES}. Adding
+ * a new config type requires:
+ *
+ * <ol>
+ *   <li>Implement the node under {@link org.team5459.config.types}.
+ *   <li>Register it here with the exact JSON {@code type} string.
+ *   <li>Add a typed getter to {@link ConfigDocument} if subsystems should read it by path.
+ *   <li>Extend {@link ConfigJsonWriter} and {@link TypedNetworkTableSync} if the type is a new
+ *       leaf scalar/array shape.
+ * </ol>
+ */
 public final class ConfigTypeRegistry {
 
   private ConfigTypeRegistry() {}

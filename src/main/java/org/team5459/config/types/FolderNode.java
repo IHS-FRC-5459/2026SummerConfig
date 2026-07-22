@@ -8,7 +8,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.team5459.config.ConfigNode;
 
-/** Organizational container that may hold any registered {@link ConfigNode} types. */
+/**
+ * Organizational folder whose JSON {@code value} is a map of named child entries.
+ *
+ * <p>Folders exist purely for path grouping. They do not carry runtime state beyond their children
+ * and publish as NetworkTables subtables.
+ */
 public final class FolderNode extends ConfigNode {
 
   private final Map<String, ConfigNode> children;

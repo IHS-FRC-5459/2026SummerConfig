@@ -14,9 +14,17 @@ import org.team5459.config.types.*;
 /**
  * Synchronizes a typed {@link ConfigDocument} with NetworkTables.
  *
- * <p>Folder and composite entries publish as subtables. Scalar entries publish as individual NT
- * values under their parent table. Remote edits to supported scalar entries update the in-memory
- * config tree and rebuild any affected composite values.
+ * <p>Folder and composite entries publish as subtables under {@code /Config}. Scalar and array
+ * entries publish as individual NT values inside their parent table. The table layout therefore
+ * mirrors JSON path structure: {@code Config/Arm/PIDController/p}.
+ *
+ * <p>{@link #listen(ConfigDocument, Runnable)} attaches {@code kValueRemote} listeners to editable
+ * scalar leaves. When a dashboard writes a new value, the in-memory node is updated and parent
+ * composites call {@link CompositeConfigNode#applyFieldChanges()}. The optional {@code onUpdate}
+ * callback runs after each applied edit (typically to save JSON back to disk).
+ *
+ * <p>Composite and folder nodes themselves are not directly editable over NetworkTables; only their
+ * scalar/array descendants are.
  */
 public final class TypedNetworkTableSync {
 

@@ -7,7 +7,12 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
-/** Verifies step 4: typed configuration values publish to nested NetworkTables paths. */
+/**
+ * Step 4 — publish a loaded document to the local {@code /Config} NetworkTables table.
+ *
+ * <p>Uses the default NT instance without starting a server so the test stays isolated. Verifies
+ * nested subtables and scalar entries reflect loaded JSON values.
+ */
 class Step4NetworkTablePublishTest {
   private static final Path EXAMPLE_CONFIG =
       Path.of("src/test/resources/typed-example-config.json");
