@@ -10,9 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 import org.team5459.config.typed.ConfigDocument;
 import org.team5459.config.typed.TypedConfigLoader;
@@ -20,9 +22,10 @@ import org.team5459.config.typed.TypedConfigSaver;
 import org.team5459.config.typed.TypedNetworkTableSync;
 
 /** Verifies step 5: remote NetworkTables edits update the document and save clean JSON. */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class Step5NetworkTableUpdateTest {
-  private static final int SERVER_PORT = 1740;
-  private static final int SERVER_NT4_PORT = 5810;
+  private static final int SERVER_PORT = 1760;
+  private static final int SERVER_NT4_PORT = 5860;
   private static final Path EXAMPLE_CONFIG =
       Path.of("src/test/resources/typed-example-config.json");
 
@@ -30,45 +33,54 @@ class Step5NetworkTableUpdateTest {
   private NetworkTableInstance dashboardInstance;
   private NetworkTableListener[] listeners;
 
-  @BeforeEach
+  @BeforeAll
   void startNetworkTables() {
     robotInstance.stopClient();
-    robotInstance.startServer("", "", SERVER_PORT);
+    robotInstance.stopServer();
+    robotInstance.startServer("", "", SERVER_PORT, SERVER_NT4_PORT);
     dashboardInstance = NetworkTableInstance.create();
     dashboardInstance.setServer("127.0.0.1", SERVER_NT4_PORT);
     dashboardInstance.startClient4("Step5NetworkTableUpdateTest");
   }
 
-  @AfterEach
+  @AfterAll
   void stopNetworkTables() {
-    if (listeners != null) {
-      for (NetworkTableListener listener : listeners) {
-        listener.close();
-      }
-    }
+    closeListeners();
     if (dashboardInstance != null) {
       dashboardInstance.stopClient();
       dashboardInstance.close();
+      dashboardInstance = null;
     }
     robotInstance.stopServer();
+    robotInstance.stopClient();
+  }
+
+  @AfterEach
+  void closeTestListeners() {
+    closeListeners();
   }
 
   @Test
   void appliesRemoteDashboardUpdateToTypedDocument() throws Exception {
     ConfigDocument document = TypedConfigLoader.load(EXAMPLE_CONFIG.toFile());
-    TypedNetworkTableSync.publish(document);
     CountDownLatch updateReceived = new CountDownLatch(1);
     listeners = TypedNetworkTableSync.listen(document, updateReceived::countDown);
+    TypedNetworkTableSync.publish(document);
 
     assertTrue(waitForDashboardConnection(), "Dashboard client did not connect to NetworkTables");
+    assertTrue(
+        waitForPublishedPidValue(0.1),
+        "Dashboard client did not receive published PID values from the robot");
     dashboardInstance
         .getTable("Config")
         .getSubTable("Arm")
         .getSubTable("PIDController")
         .getEntry("p")
         .setDouble(0.5);
+    dashboardInstance.flush();
+    robotInstance.waitForListenerQueue(2.0);
 
-    assertTrue(updateReceived.await(2, TimeUnit.SECONDS), "Remote update was not received");
+    assertTrue(updateReceived.await(5, TimeUnit.SECONDS), "Remote update was not received");
     assertEquals(0.5, document.getDouble("Arm/PIDController/p"));
     assertEquals(0.5, document.getPIDController("Arm/PIDController").getP());
   }
@@ -94,9 +106,35 @@ class Step5NetworkTableUpdateTest {
     assertEquals(document.getDouble("Arm/Rotation/deg"), reloaded.getDouble("Arm/Rotation/deg"));
   }
 
+  private void closeListeners() {
+    if (listeners != null) {
+      for (NetworkTableListener listener : listeners) {
+        listener.close();
+      }
+      listeners = null;
+    }
+  }
+
   private boolean waitForDashboardConnection() throws InterruptedException {
     for (int attempt = 0; attempt < 40; attempt++) {
       if (dashboardInstance.isConnected()) {
+        return true;
+      }
+      Thread.sleep(50);
+    }
+    return false;
+  }
+
+  private boolean waitForPublishedPidValue(double expectedValue) throws InterruptedException {
+    for (int attempt = 0; attempt < 40; attempt++) {
+      double publishedValue =
+          dashboardInstance
+              .getTable("Config")
+              .getSubTable("Arm")
+              .getSubTable("PIDController")
+              .getEntry("p")
+              .getDouble(Double.NaN);
+      if (Double.compare(publishedValue, expectedValue) == 0) {
         return true;
       }
       Thread.sleep(50);
