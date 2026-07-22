@@ -35,7 +35,7 @@ public class Robot extends LoggedRobot {
   private NetworkTableListener[] configListeners;
   private ConfigDocument configDocument;
   private final File typedConfigFile =
-      new File(Filesystem.getDeployDirectory(), "exampleStructure.json");
+      new File(Filesystem.getDeployDirectory(), "reflection-test-config.json");
 
   public Robot() {
     // Record metadata
