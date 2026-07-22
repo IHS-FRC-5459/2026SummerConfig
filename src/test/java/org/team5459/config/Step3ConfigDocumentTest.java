@@ -27,8 +27,7 @@ import org.team5459.config.types.Rotation2dNode;
  * resolution to concrete node types, and representative WPILib composites loaded from inline JSON.
  */
 class Step3ConfigDocumentTest {
-  private static final Path EXAMPLE_CONFIG =
-      Path.of("src/test/resources/typed-example-config.json");
+  private static final Path EXAMPLE_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   @Test
   void returnsDefaultsAndWarnsWhenPathOrTypeIsWrong() {

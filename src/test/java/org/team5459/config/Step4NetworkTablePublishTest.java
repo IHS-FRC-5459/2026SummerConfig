@@ -14,8 +14,7 @@ import org.junit.jupiter.api.Test;
  * nested subtables and scalar entries reflect loaded JSON values.
  */
 class Step4NetworkTablePublishTest {
-  private static final Path EXAMPLE_CONFIG =
-      Path.of("src/test/resources/typed-example-config.json");
+  private static final Path EXAMPLE_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   @Test
   void publishesNestedTypedValuesToConfigTable() {

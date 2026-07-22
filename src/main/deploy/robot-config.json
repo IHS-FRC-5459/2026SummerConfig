@@ -7,7 +7,7 @@
         "value" : {
           "p" : {
             "type" : "double",
-            "value" : 0.4
+            "value" : 0.2
           },
           "i" : {
             "type" : "double",

@@ -23,8 +23,8 @@
  * <h2>Typical robot workflow</h2>
  *
  * <ol>
- *   <li>{@link org.team5459.config.TypedConfigLoader#load(java.io.File)} parses JSON into a
- *       {@link org.team5459.config.ConfigDocument}.
+ *   <li>{@link org.team5459.config.TypedConfigLoader#load(java.io.File)} parses JSON into a {@link
+ *       org.team5459.config.ConfigDocument}.
  *   <li>Subsystems read values through typed getters, e.g. {@code
  *       document.getPIDController("Arm/PIDController")}.
  *   <li>{@link org.team5459.config.TypedNetworkTableSync#publish(ConfigDocument)} mirrors the tree

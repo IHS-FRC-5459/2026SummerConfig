@@ -17,8 +17,8 @@ import org.team5459.config.types.*;
  *   <li>Implement the node under {@link org.team5459.config.types}.
  *   <li>Register it here with the exact JSON {@code type} string.
  *   <li>Add a typed getter to {@link ConfigDocument} if subsystems should read it by path.
- *   <li>Extend {@link ConfigJsonWriter} and {@link TypedNetworkTableSync} if the type is a new
- *       leaf scalar/array shape.
+ *   <li>Extend {@link ConfigJsonWriter} and {@link TypedNetworkTableSync} if the type is a new leaf
+ *       scalar/array shape.
  * </ol>
  */
 public final class ConfigTypeRegistry {

@@ -13,8 +13,8 @@ import org.team5459.config.ValueConfigNode;
 /**
  * {@link Transform2d} with flexible translation and rotation field layouts.
  *
- * <p>Translation accepts nested {@code translation} or inline {@code x}/{@code y}. Rotation
- * accepts nested {@code rotation} and/or a top-level {@code deg} override.
+ * <p>Translation accepts nested {@code translation} or inline {@code x}/{@code y}. Rotation accepts
+ * nested {@code rotation} and/or a top-level {@code deg} override.
  */
 public final class Transform2dNode extends ValueConfigNode<Transform2d> {
 

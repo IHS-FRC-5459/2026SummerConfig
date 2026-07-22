@@ -10,12 +10,11 @@ import org.junit.jupiter.api.Test;
 /**
  * Step 2 — load typed JSON into a {@link ConfigDocument}.
  *
- * <p>Uses {@code src/test/resources/typed-example-config.json} to verify nested folders, composite
- * PID fields, geometry nodes, and array values deserialize to the expected runtime numbers.
+ * <p>Uses {@code src/test/resources/robot-config.json} to verify nested folders, composite PID
+ * fields, geometry nodes, and array values deserialize to the expected runtime numbers.
  */
 class Step2TypedConfigLoaderTest {
-  private static final Path EXAMPLE_CONFIG =
-      Path.of("src/test/resources/typed-example-config.json");
+  private static final Path EXAMPLE_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   @Test
   void loadsNestedTypedValuesFromJsonFile() {

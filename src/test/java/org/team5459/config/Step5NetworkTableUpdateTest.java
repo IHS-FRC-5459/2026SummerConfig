@@ -28,8 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 class Step5NetworkTableUpdateTest {
   private static final int SERVER_PORT = 1760;
   private static final int SERVER_NT4_PORT = 5860;
-  private static final Path EXAMPLE_CONFIG =
-      Path.of("src/test/resources/typed-example-config.json");
+  private static final Path EXAMPLE_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   private final NetworkTableInstance robotInstance = NetworkTableInstance.getDefault();
   private NetworkTableInstance dashboardInstance;

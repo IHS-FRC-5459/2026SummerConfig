@@ -1,15 +1,15 @@
 /**
- * Concrete {@link org.team5459.config.ConfigNode} implementations for every supported JSON
- * {@code type} string.
+ * Concrete {@link org.team5459.config.ConfigNode} implementations for every supported JSON {@code
+ * type} string.
  *
  * <h2>Patterns</h2>
  *
  * <p>Most files here follow one of three shapes:
  *
  * <ul>
- *   <li><b>Scalar/array leaves</b> — e.g. {@link DoubleNode}, {@link IntNode}, {@link
- *       StringNode}. These store a primitive payload, expose {@code getValue}/{@code setValue}, and
- *       sync directly to NetworkTables entries.
+ *   <li><b>Scalar/array leaves</b> — e.g. {@link DoubleNode}, {@link IntNode}, {@link StringNode}.
+ *       These store a primitive payload, expose {@code getValue}/{@code setValue}, and sync
+ *       directly to NetworkTables entries.
  *   <li><b>Immutable composites</b> — extend {@link org.team5459.config.ValueConfigNode} and
  *       implement {@code buildValue()} to construct a WPILib object from typed child fields. The
  *       cached value is rebuilt whenever child fields change (including after remote NT edits).
