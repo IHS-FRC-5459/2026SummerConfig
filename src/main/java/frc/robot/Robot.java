@@ -18,9 +18,10 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
-import org.team5459.config.ConfigManager;
-import org.team5459.config.JsonConfigSaver;
-import org.team5459.config.NetworkTableSync;
+import org.team5459.config.ConfigDocument;
+import org.team5459.config.TypedConfigLoader;
+import org.team5459.config.TypedConfigSaver;
+import org.team5459.config.TypedNetworkTableSync;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -32,14 +33,9 @@ public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
   private NetworkTableListener[] configListeners;
-  private final ReflectionTestConfig reflectionConfig = new ReflectionTestConfig();
-  private final File reflectionConfigFile =
-      new File(Filesystem.getDeployDirectory(), "reflection-test-config.json");
-
-  public static final class ReflectionTestConfig {
-    public double speed = 4.5;
-    public int id = 5;
-  }
+  private ConfigDocument configDocument;
+  private final File typedConfigFile =
+      new File(Filesystem.getDeployDirectory(), "robot-config.json");
 
   public Robot() {
     // Record metadata
@@ -86,6 +82,11 @@ public class Robot extends LoggedRobot {
     robotContainer = new RobotContainer();
   }
 
+  /** Returns the live typed configuration loaded from deploy. */
+  public ConfigDocument getConfigDocument() {
+    return configDocument;
+  }
+
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
@@ -106,23 +107,22 @@ public class Robot extends LoggedRobot {
 
   /** This function is called once when the robot is first started up. */
   @Override
-  public void robotInit() {}
+  public void robotInit() {
+    configDocument = TypedConfigLoader.load(typedConfigFile);
+    TypedNetworkTableSync.publish(configDocument);
+    configListeners =
+        TypedNetworkTableSync.listen(
+            configDocument,
+            () -> {
+              TypedConfigSaver.save(typedConfigFile, configDocument);
+              System.out.println("Saved typed config: " + typedConfigFile.getAbsolutePath());
+            });
+    System.out.println("Published typed config to NetworkTables under /Config");
+  }
 
   /** This function is called once when the robot is disabled. */
   @Override
-  public void disabledInit() {
-    ConfigManager.load(reflectionConfigFile, reflectionConfig);
-    NetworkTableSync.publish(reflectionConfig);
-    if (configListeners == null) {
-      configListeners =
-          NetworkTableSync.listen(
-              reflectionConfig,
-              () -> {
-                JsonConfigSaver.save(reflectionConfigFile, reflectionConfig);
-                System.out.println("Saved: " + reflectionConfigFile.getAbsolutePath());
-              });
-    }
-  }
+  public void disabledInit() {}
 
   /** This function is called periodically when disabled. */
   @Override

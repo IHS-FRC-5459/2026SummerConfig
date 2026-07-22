@@ -1,80 +1,141 @@
 package org.team5459.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableListener;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Verifies step 5: remote dashboard updates change the config API and can be saved to JSON. */
+/**
+ * Step 5 — remote NetworkTables edits and schema-only JSON save.
+ *
+ * <p>Starts a robot-side NT server and a separate dashboard client instance so remote {@code
+ * kValueRemote} events exercise the same path as Elastic editing {@code /Config}. Also verifies
+ * {@link TypedConfigSaver} does not persist runtime-only Jackson properties.
+ */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class Step5NetworkTableUpdateTest {
-  private static final int SERVER_PORT = 1740;
-  private static final int SERVER_NT4_PORT = 5810;
-
-  @TempDir Path tempDirectory;
+  private static final int SERVER_PORT = 1760;
+  private static final int SERVER_NT4_PORT = 5860;
+  private static final Path EXAMPLE_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   private final NetworkTableInstance robotInstance = NetworkTableInstance.getDefault();
   private NetworkTableInstance dashboardInstance;
   private NetworkTableListener[] listeners;
 
-  static class TunableConfig {
-    public double speed = 1.0;
-  }
-
-  @BeforeEach
+  @BeforeAll
   void startNetworkTables() {
     robotInstance.stopClient();
-    robotInstance.startServer("", "", SERVER_PORT);
+    robotInstance.stopServer();
+    robotInstance.startServer("", "", SERVER_PORT, SERVER_NT4_PORT);
     dashboardInstance = NetworkTableInstance.create();
     dashboardInstance.setServer("127.0.0.1", SERVER_NT4_PORT);
     dashboardInstance.startClient4("Step5NetworkTableUpdateTest");
   }
 
-  @AfterEach
+  @AfterAll
   void stopNetworkTables() {
+    closeListeners();
+    if (dashboardInstance != null) {
+      dashboardInstance.stopClient();
+      dashboardInstance.close();
+      dashboardInstance = null;
+    }
+    robotInstance.stopServer();
+    robotInstance.stopClient();
+  }
+
+  @AfterEach
+  void closeTestListeners() {
+    closeListeners();
+  }
+
+  @Test
+  void appliesRemoteDashboardUpdateToTypedDocument() throws Exception {
+    ConfigDocument document = TypedConfigLoader.load(EXAMPLE_CONFIG.toFile());
+    CountDownLatch updateReceived = new CountDownLatch(1);
+    listeners = TypedNetworkTableSync.listen(document, updateReceived::countDown);
+    TypedNetworkTableSync.publish(document);
+
+    assertTrue(waitForDashboardConnection(), "Dashboard client did not connect to NetworkTables");
+    assertTrue(
+        waitForPublishedPidValue(0.1),
+        "Dashboard client did not receive published PID values from the robot");
+    dashboardInstance
+        .getTable("Config")
+        .getSubTable("Arm")
+        .getSubTable("PIDController")
+        .getEntry("p")
+        .setDouble(0.5);
+    dashboardInstance.flush();
+    robotInstance.waitForListenerQueue(2.0);
+
+    assertTrue(updateReceived.await(5, TimeUnit.SECONDS), "Remote update was not received");
+    assertEquals(0.5, document.getDouble("Arm/PIDController/p"));
+    assertEquals(0.5, document.getPIDController("Arm/PIDController").getP());
+  }
+
+  @Test
+  void savesOnlyTypeAndValueFields(@TempDir Path tempDirectory) throws Exception {
+    ConfigDocument document = TypedConfigLoader.load(EXAMPLE_CONFIG.toFile());
+    Path savedFile = tempDirectory.resolve("saved-config.json");
+
+    TypedConfigSaver.save(savedFile.toFile(), document);
+
+    String json = Files.readString(savedFile);
+    assertFalse(
+        json.contains("controller"), "Saved JSON must not include live PIDController state");
+    assertFalse(json.contains("childEntries"), "Saved JSON must not include path traversal maps");
+    assertFalse(
+        json.contains("\"rotation\""), "Saved JSON must not include built Rotation2d values");
+
+    ConfigDocument reloaded = TypedConfigLoader.load(savedFile.toFile());
+    assertEquals(
+        document.getPIDController("Arm/PIDController").getP(),
+        reloaded.getPIDController("Arm/PIDController").getP());
+    assertEquals(document.getDouble("Arm/Rotation/deg"), reloaded.getDouble("Arm/Rotation/deg"));
+  }
+
+  private void closeListeners() {
     if (listeners != null) {
       for (NetworkTableListener listener : listeners) {
         listener.close();
       }
+      listeners = null;
     }
-    if (dashboardInstance != null) {
-      dashboardInstance.stopClient();
-      dashboardInstance.close();
-    }
-    robotInstance.stopServer();
-  }
-
-  @Test
-  void appliesRemoteDashboardUpdateAndSavesUpdatedConfiguration() throws Exception {
-    TunableConfig config = new TunableConfig();
-    Path configFile = tempDirectory.resolve("tunable-config.json");
-    CountDownLatch updateReceived = new CountDownLatch(1);
-    listeners =
-        NetworkTableSync.listen(
-            config,
-            () -> {
-              JsonConfigSaver.save(configFile.toFile(), config);
-              updateReceived.countDown();
-            });
-
-    assertTrue(waitForDashboardConnection(), "Dashboard client did not connect to NetworkTables");
-    dashboardInstance.getTable("Config").getEntry("speed").setDouble(9.5);
-
-    assertTrue(updateReceived.await(2, TimeUnit.SECONDS), "Remote update was not received");
-    assertEquals(9.5, config.speed);
-    assertEquals(9.5, ConfigManager.load(configFile.toFile()).getRoot().get("speed").asDouble());
   }
 
   private boolean waitForDashboardConnection() throws InterruptedException {
     for (int attempt = 0; attempt < 40; attempt++) {
       if (dashboardInstance.isConnected()) {
+        return true;
+      }
+      Thread.sleep(50);
+    }
+    return false;
+  }
+
+  private boolean waitForPublishedPidValue(double expectedValue) throws InterruptedException {
+    for (int attempt = 0; attempt < 40; attempt++) {
+      double publishedValue =
+          dashboardInstance
+              .getTable("Config")
+              .getSubTable("Arm")
+              .getSubTable("PIDController")
+              .getEntry("p")
+              .getDouble(Double.NaN);
+      if (Double.compare(publishedValue, expectedValue) == 0) {
         return true;
       }
       Thread.sleep(50);
