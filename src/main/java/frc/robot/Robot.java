@@ -7,11 +7,14 @@
 
 package frc.robot;
 
+import edu.wpi.first.networktables.NetworkTableEvent;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableListener;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import java.io.File;
+import java.util.EnumSet;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -34,8 +37,11 @@ public class Robot extends LoggedRobot {
   private RobotContainer robotContainer;
   private NetworkTableListener[] configListeners;
   private ConfigDocument configDocument;
+  private NetworkTableListener saveButtonListener;
   private final File typedConfigFile =
       new File(Filesystem.getDeployDirectory(), "robot-config.json");
+  private final File configCacheFile =
+      new File(Filesystem.getDeployDirectory(), "config-cache.json");
 
   public Robot() {
     // Record metadata
@@ -114,10 +120,28 @@ public class Robot extends LoggedRobot {
         TypedNetworkTableSync.listen(
             configDocument,
             () -> {
-              TypedConfigSaver.save(typedConfigFile, configDocument);
-              System.out.println("Saved typed config: " + typedConfigFile.getAbsolutePath());
+              TypedConfigSaver.save(configCacheFile, configDocument);
+              System.out.println("Saved config cache: " + configCacheFile.getAbsolutePath());
             });
     System.out.println("Published typed config to NetworkTables under /Config");
+
+    var saveEntry = NetworkTableInstance.getDefault().getTable("ConfigManager").getEntry("Save");
+    saveEntry.setBoolean(false);
+    saveButtonListener =
+        NetworkTableListener.createListener(
+            saveEntry,
+            EnumSet.of(NetworkTableEvent.Kind.kValueRemote),
+            event -> {
+              if (event.valueData != null && event.valueData.value.getBoolean()) {
+                commitConfig();
+                saveEntry.setBoolean(false);
+              }
+            });
+  }
+
+  private void commitConfig() {
+    TypedConfigSaver.save(typedConfigFile, configDocument);
+    System.out.println("Committed config: " + typedConfigFile.getAbsolutePath());
   }
 
   /** This function is called once when the robot is disabled. */
