@@ -123,27 +123,7 @@ public class Robot extends LoggedRobot {
               TypedConfigSaver.save(configCacheFile, configDocument);
               System.out.println("Saved config cache: " + configCacheFile.getAbsolutePath());
             });
-    System.out.println("Published typed config to NetworkTables under /Config");
-
-    var saveEntry = NetworkTableInstance.getDefault().getTable("ConfigManager").getEntry("Save");
-    saveEntry.setBoolean(false);
-    saveButtonListener =
-        NetworkTableListener.createListener(
-            saveEntry,
-            EnumSet.of(NetworkTableEvent.Kind.kValueRemote),
-            event -> {
-              if (event.valueData != null && event.valueData.value.getBoolean()) {
-                commitConfig();
-                saveEntry.setBoolean(false);
-              }
-            });
   }
-
-  private void commitConfig() {
-    TypedConfigSaver.save(typedConfigFile, configDocument);
-    System.out.println("Committed config: " + typedConfigFile.getAbsolutePath());
-  }
-
   /** This function is called once when the robot is disabled. */
   @Override
   public void disabledInit() {}
