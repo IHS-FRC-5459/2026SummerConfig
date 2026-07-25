@@ -7,14 +7,11 @@
 
 package frc.robot;
 
-import edu.wpi.first.networktables.NetworkTableEvent;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableListener;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import java.io.File;
-import java.util.EnumSet;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -22,6 +19,7 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.team5459.config.ConfigDocument;
+import org.team5459.config.ConfigSaveButton;
 import org.team5459.config.TypedConfigLoader;
 import org.team5459.config.TypedConfigSaver;
 import org.team5459.config.TypedNetworkTableSync;
@@ -123,6 +121,8 @@ public class Robot extends LoggedRobot {
               TypedConfigSaver.save(configCacheFile, configDocument);
               System.out.println("Saved config cache: " + configCacheFile.getAbsolutePath());
             });
+    saveButtonListener = ConfigSaveButton.listen(typedConfigFile, configDocument);
+    System.out.println("Published typed config to NetworkTables under /Config");
   }
   /** This function is called once when the robot is disabled. */
   @Override
