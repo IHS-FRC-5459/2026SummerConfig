@@ -15,7 +15,7 @@
           },
           "d" : {
             "type" : "double",
-            "value" : 0.1
+            "value" : 0.02
           }
         }
       },

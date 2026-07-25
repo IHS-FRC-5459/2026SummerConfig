@@ -21,8 +21,8 @@ import java.util.EnumSet;
  * SWITCH TO A TOGGLE OR BUTTON TO WORK).
  */
 public final class ConfigSaveButton {
-  private static final String kDefaultTableName = "ConfigManager";
-  private static final String kDefaultEntryName = "Save";
+  static final String kDefaultTableName = "ConfigManager";
+  static final String kDefaultEntryName = "Save";
 
   private ConfigSaveButton() {}
 
