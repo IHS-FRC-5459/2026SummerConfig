@@ -17,7 +17,6 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
-import org.team5459.config.ConfigDocument;
 import org.team5459.config.ConfigManager;
 
 /**
@@ -74,11 +73,6 @@ public class Robot extends LoggedRobot {
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our autonomous chooser on the dashboard.
     robotContainer = new RobotContainer();
-  }
-
-  /** Returns the live typed configuration loaded from deploy. */
-  public ConfigDocument getConfigDocument() {
-    return configManager.getDocument();
   }
 
   /** This function is called periodically during all modes. */

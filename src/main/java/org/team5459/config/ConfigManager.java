@@ -20,9 +20,8 @@ import java.io.File;
  * }</pre>
  *
  * <p>Values tuned live from a dashboard (e.g. Elastic) autosave into the cache file immediately.
- * Pressing the Save button (default topic {@code ConfigManager/Save}) commits the current in-memory
- * values into the real config file. Robot code should read tuned values through {@link
- * #getDocument()}
+ * Pressing the Save button (default topic {@code Config/Save}) commits the current in-memory values
+ * into the real config file. Robot code should read tuned values through {@link #getDocument()}
  */
 public class ConfigManager {
   private final File configFile;

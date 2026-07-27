@@ -15,13 +15,13 @@ import java.util.EnumSet;
  * use this class to commit those in-memory values to the real config file only when a human
  * explicitly presses Save.
  *
- * <p>The underlying NetwordTables entry (default {@ConfigManager/Save}) is reset back to {@code
- * false} immediately after each press, so it behaves as a momentary trigger regardless of whether
- * the dashboard widget bound to it is a button or a toggle switch (CANNOT BE A BOOLEAN MUST ALWAYS
+ * <p>The underlying NetwordTables entry (default {@Config/Save}) is reset back to {@code false}
+ * immediately after each press, so it behaves as a momentary trigger regardless of whether the
+ * dashboard widget bound to it is a button or a toggle switch (CANNOT BE A BOOLEAN MUST ALWAYS
  * SWITCH TO A TOGGLE OR BUTTON TO WORK).
  */
 public final class ConfigSaveButton {
-  static final String kDefaultTableName = "ConfigManager";
+  static final String kDefaultTableName = "Config";
   static final String kDefaultEntryName = "Save";
 
   private ConfigSaveButton() {}
