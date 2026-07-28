@@ -296,7 +296,7 @@ public final class DoubleNode extends ConfigNode {
 | No `getChildEntries()` | Leaf node — path traversal stops here. |
 | No `initialize()` override | Nothing to set up beyond storing the number. |
 
-On disk: `{ "type": "double", "value": 0.1 }`  
+On disk: `{ "type": "double", "value": 0.1 }`
 On NetworkTables: `/Config/Arm/PIDController/p = 0.1`
 
 Every other scalar leaf (`IntNode`, `BooleanNode`, etc.) follows the same pattern.
