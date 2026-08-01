@@ -7,7 +7,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.networktables.NetworkTableListener;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -18,10 +17,7 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
-import org.team5459.config.ConfigDocument;
-import org.team5459.config.TypedConfigLoader;
-import org.team5459.config.TypedConfigSaver;
-import org.team5459.config.TypedNetworkTableSync;
+import org.team5459.config.ConfigManager;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -32,10 +28,7 @@ import org.team5459.config.TypedNetworkTableSync;
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
-  private NetworkTableListener[] configListeners;
-  private ConfigDocument configDocument;
-  private final File typedConfigFile =
-      new File(Filesystem.getDeployDirectory(), "robot-config.json");
+  private ConfigManager configManager;
 
   public Robot() {
     // Record metadata
@@ -82,11 +75,6 @@ public class Robot extends LoggedRobot {
     robotContainer = new RobotContainer();
   }
 
-  /** Returns the live typed configuration loaded from deploy. */
-  public ConfigDocument getConfigDocument() {
-    return configDocument;
-  }
-
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
@@ -108,16 +96,10 @@ public class Robot extends LoggedRobot {
   /** This function is called once when the robot is first started up. */
   @Override
   public void robotInit() {
-    configDocument = TypedConfigLoader.load(typedConfigFile);
-    TypedNetworkTableSync.publish(configDocument);
-    configListeners =
-        TypedNetworkTableSync.listen(
-            configDocument,
-            () -> {
-              TypedConfigSaver.save(typedConfigFile, configDocument);
-              System.out.println("Saved typed config: " + typedConfigFile.getAbsolutePath());
-            });
-    System.out.println("Published typed config to NetworkTables under /Config");
+    configManager =
+        new ConfigManager(
+            new File(Filesystem.getDeployDirectory(), "robot-config.json"),
+            new File(Filesystem.getDeployDirectory(), "config-cache.json"));
   }
 
   /** This function is called once when the robot is disabled. */
