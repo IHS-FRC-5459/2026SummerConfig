@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "grid_size": 128,
+  "tabs": [
+    {
+      "name": "Teleoperated",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "Auto Chooser",
+            "x": 640,
+            "y": 0,
+            "width": 128,
+            "height": 128,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auto Chooser",
+              "period": 0.06,
+              "value": "Auto10-LeftNeutralZoneBackShootRightClimb",
+              "sort_options": false
+            }
+          },
+          {
+            "title": "operatorOffset",
+            "x": 640,
+            "y": 256,
+            "width": 128,
+            "height": 128,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/operatorOffset",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "elevatorManualControl",
+            "x": 512,
+            "y": 128,
+            "width": 128,
+            "height": 128,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/SmartDashboard/elevatorManualControl",
+              "period": 0.06,
+              "data_type": "boolean",
+              "value": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Autonomous",
+      "grid_layout": {
+        "layouts": [],
+        "containers": []
+      }
+    }
+  ]
+}
