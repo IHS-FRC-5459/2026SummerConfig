@@ -21,6 +21,62 @@
               "value": 110.0,
               "show_submit_button": false
             }
+          },
+          {
+            "title": "myDouble",
+            "x": 1152.0,
+            "y": 256.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/myDouble",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": true
+            }
+          },
+          {
+            "title": "DebugMode",
+            "x": 512.0,
+            "y": 256.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Config/DebugMode",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "Save",
+            "x": 640.0,
+            "y": 256.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Config/Save",
+              "period": 0.06,
+              "data_type": "boolean",
+              "value": true
+            }
+          },
+          {
+            "title": "p",
+            "x": 768.0,
+            "y": 256.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/Config/Arm/PIDController/p",
+              "period": 0.06,
+              "data_type": "double",
+              "value": 0.5,
+              "show_submit_button": false
+            }
           }
         ]
       }
