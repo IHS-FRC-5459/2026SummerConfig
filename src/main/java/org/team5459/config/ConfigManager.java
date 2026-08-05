@@ -14,21 +14,21 @@ import java.util.List;
  *   <li><b>Debug</b> ({@code !FMS} and {@code Config/DebugMode == true}): NetworkTables edits
  *       update the live document; getters read that NT-backed document; edits autosave to {@code
  *       config-cache.json}. Promote to {@code robot-config.json} via the Save widget or when a
- *       watched file (default {@code elastic-layout.json}) changes content (Elastic Save As).
+ *       watched file (default {@code elastic-layout.json}) changes content (Elastic Save As). New
+ *       scalar topics under {@code /Config} are auto-registered (Elastic Custom + rebind).
  *   <li><b>Match</b> (FMS attached, or DebugMode widget false): publish defaults to NT for display
  *       only; ignore NT writebacks; do not write JSON; getters read the JSON defaults loaded at
  *       startup.
  * </ul>
  *
- * <p>Typical usage from {@code Robot.robotInit()} / {@code robotPeriodic()}:
+ * <h2>Creating constants</h2>
  *
- * <pre>{@code
- * configManager = new ConfigManager(
- *     new File(Filesystem.getDeployDirectory(), "robot-config.json"),
- *     new File(Filesystem.getDeployDirectory(), "config-cache.json"));
- * // each loop:
- * configManager.periodic();
- * }</pre>
+ * <ul>
+ *   <li>Edit {@code robot-config.json} (and deploy).
+ *   <li>Debug Create panel: {@code /Config/Create/Type} (chooser), {@code Path}, {@code Go} —
+ *       clones a template into the live document and clears the form.
+ *   <li>Elastic Custom scalar → rebind topic to {@code /Config/...} (debug auto-register).
+ * </ul>
  */
 public class ConfigManager {
   private final File configFile;
@@ -41,13 +41,11 @@ public class ConfigManager {
 
   private final List<NetworkTableListener> configListeners = new ArrayList<>();
   private NetworkTableListener saveButtonListener;
+  private ConfigDynamicRegistrar dynamicRegistrar;
+  private ConfigCreatePanel createPanel;
   private boolean debugActive;
   private boolean promoting;
 
-  /**
-   * Loads {@code configFile}, publishes to NetworkTables, and enables debug tooling when
-   * appropriate. Watches a sibling {@code elastic-layout.json} for Save As promote triggers.
-   */
   public ConfigManager(File configFile, File cacheFile) {
     this(configFile, cacheFile, sibling(configFile, "elastic-layout.json"));
   }
@@ -70,7 +68,6 @@ public class ConfigManager {
     this.liveDocument = TypedConfigLoader.load(configFile);
     this.debugMode = new ConfigDebugMode();
     this.promoteWatcher = new ConfigPromoteWatcher(watchFile, this::promoteFromFileWatch);
-    // Baseline the watched file now so the first real Save As rewrite promotes.
     this.promoteWatcher.poll();
 
     TypedNetworkTableSync.publish(defaultsDocument);
@@ -87,10 +84,6 @@ public class ConfigManager {
     }
   }
 
-  /**
-   * Re-evaluates debug vs match mode and polls the Save As file watcher. Call from {@code
-   * robotPeriodic()}.
-   */
   public void periodic() {
     boolean wantDebug = debugMode.isDebug();
     if (wantDebug != debugActive) {
@@ -102,20 +95,16 @@ public class ConfigManager {
     }
     if (debugActive) {
       promoteWatcher.poll();
+      if (dynamicRegistrar != null) {
+        dynamicRegistrar.poll();
+      }
     }
   }
 
-  /**
-   * Document used by robot code getters.
-   *
-   * <p>Debug: live NT-synced document. Match: immutable-at-runtime JSON defaults from {@code
-   * robot-config.json}.
-   */
   public ConfigDocument getDocument() {
     return debugActive ? liveDocument : defaultsDocument;
   }
 
-  /** Whether debug (live-tuning) mode is currently active. */
   public boolean isDebugMode() {
     return debugActive;
   }
@@ -132,7 +121,6 @@ public class ConfigManager {
     return watchFile;
   }
 
-  /** Writes the live document to {@code robot-config.json} when in debug mode. */
   public void promote() {
     if (!debugActive) {
       System.out.println("[Config] Promote ignored: not in debug mode");
@@ -143,9 +131,9 @@ public class ConfigManager {
     }
     promoting = true;
     try {
-      // Live document is already kept in sync by NT listeners in debug mode.
       TypedConfigSaver.save(configFile, liveDocument);
-      TypedConfigOverlay.apply(liveDocument, defaultsDocument);
+      // Reload committed file into defaults so newly auto-registered paths appear there too.
+      defaultsDocument.replaceRoot(TypedConfigLoader.load(configFile).getRootEntries());
       System.out.println("[Config] Promoted live values to " + configFile.getAbsolutePath());
     } finally {
       promoting = false;
@@ -165,8 +153,10 @@ public class ConfigManager {
     TypedConfigOverlay.applyFile(cacheFile, liveDocument);
     TypedNetworkTableSync.publish(liveDocument);
     TypedNetworkTablePull.pull(liveDocument);
-    startConfigListeners();
     debugActive = true;
+    startConfigListeners();
+    startDynamicRegistrar();
+    startCreatePanel();
     System.out.println(
         "[Config] Debug mode: getters use NetworkTables; autosaving " + cacheFile.getName());
   }
@@ -180,27 +170,66 @@ public class ConfigManager {
   }
 
   private void startConfigListeners() {
-    disableDebugListenersOnly();
+    closeConfigValueListeners();
     NetworkTableListener[] listeners =
-        TypedNetworkTableSync.listen(
-            liveDocument,
-            () -> {
-              if (!debugActive) {
-                return;
-              }
-              TypedConfigSaver.save(cacheFile, liveDocument);
-              System.out.println("[Config] Saved config cache: " + cacheFile.getAbsolutePath());
-            });
+        TypedNetworkTableSync.listen(liveDocument, this::autosaveCache);
     for (NetworkTableListener listener : listeners) {
       configListeners.add(listener);
     }
   }
 
+  private void startDynamicRegistrar() {
+    closeDynamicRegistrar();
+    dynamicRegistrar = new ConfigDynamicRegistrar(liveDocument, this::onDocumentStructureChanged);
+  }
+
+  private void startCreatePanel() {
+    closeCreatePanel();
+    createPanel = new ConfigCreatePanel(liveDocument, this::onDocumentStructureChanged);
+  }
+
+  private void onDocumentStructureChanged() {
+    if (!debugActive) {
+      return;
+    }
+    TypedNetworkTableSync.publish(liveDocument);
+    startConfigListeners();
+    autosaveCache();
+  }
+
+  private void autosaveCache() {
+    if (!debugActive) {
+      return;
+    }
+    TypedConfigSaver.save(cacheFile, liveDocument);
+    System.out.println("[Config] Saved config cache: " + cacheFile.getAbsolutePath());
+  }
+
   private void disableDebugListenersOnly() {
+    closeConfigValueListeners();
+    closeDynamicRegistrar();
+    closeCreatePanel();
+  }
+
+  private void closeConfigValueListeners() {
     for (NetworkTableListener listener : configListeners) {
       listener.close();
     }
     configListeners.clear();
+  }
+
+  private void closeDynamicRegistrar() {
+    if (dynamicRegistrar != null) {
+      dynamicRegistrar.close();
+      dynamicRegistrar = null;
+    }
+  }
+
+  private void closeCreatePanel() {
+    if (createPanel != null) {
+      createPanel.close();
+      createPanel = null;
+    }
   }
 
   private void promoteFromSaveButton() {

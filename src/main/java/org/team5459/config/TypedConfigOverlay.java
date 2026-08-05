@@ -11,10 +11,8 @@ import org.team5459.config.types.IntNode;
 import org.team5459.config.types.StringNode;
 
 /**
- * Copies scalar/array leaf values from one typed document onto another where paths and types match.
- *
- * <p>Used to overlay {@code config-cache.json} onto {@code robot-config.json} defaults at debug
- * startup, and to restore defaults when leaving debug mode.
+ * Copies scalar/array leaf values from one typed document onto another where paths and types match,
+ * and inserts missing paths from the source (used when restoring {@code config-cache.json}).
  */
 public final class TypedConfigOverlay {
 
@@ -32,30 +30,50 @@ public final class TypedConfigOverlay {
     System.out.println("Applied config cache from " + cacheFile.getAbsolutePath());
   }
 
-  /** Overlays matching leaf values from {@code source} onto {@code target}. */
+  /** Overlays matching values from {@code source} onto {@code target}, inserting missing paths. */
   public static void apply(ConfigDocument source, ConfigDocument target) {
-    applyEntries(source.getRootEntries(), target.getRootEntries());
+    mergeEntries(source.getRootEntries(), target, "");
   }
 
-  private static void applyEntries(Map<String, ConfigNode> source, Map<String, ConfigNode> target) {
+  private static void mergeEntries(
+      Map<String, ConfigNode> source, ConfigDocument target, String pathPrefix) {
     source.forEach(
         (name, sourceNode) -> {
-          ConfigNode targetNode = target.get(name);
+          String path = pathPrefix.isEmpty() ? name : pathPrefix + "/" + name;
+          if (sourceNode instanceof FolderNode sourceFolder) {
+            if (!target.hasPath(path)) {
+              target.insertLeaf(path, new FolderNode(new java.util.LinkedHashMap<>()));
+            }
+            mergeEntries(sourceFolder.getChildren(), target, path);
+            return;
+          }
+
+          if (!target.hasPath(path)) {
+            target.insertLeaf(path, sourceNode);
+            return;
+          }
+
+          ConfigNode targetNode = target.getNode(path);
           if (targetNode == null) {
             return;
           }
-          applyNode(sourceNode, targetNode);
+          overlayExisting(sourceNode, targetNode);
         });
   }
 
-  private static void applyNode(ConfigNode source, ConfigNode target) {
-    if (source instanceof FolderNode sourceFolder && target instanceof FolderNode targetFolder) {
-      applyEntries(sourceFolder.getChildren(), targetFolder.getChildren());
-      return;
-    }
+  private static void overlayExisting(ConfigNode source, ConfigNode target) {
     if (source instanceof CompositeConfigNode sourceComposite
         && target instanceof CompositeConfigNode targetComposite) {
-      applyEntries(sourceComposite.getFields(), targetComposite.getFields());
+      sourceComposite
+          .getFields()
+          .forEach(
+              (fieldName, sourceField) -> {
+                ConfigNode targetField = targetComposite.getFields().get(fieldName);
+                if (targetField == null) {
+                  return;
+                }
+                overlayExisting(sourceField, targetField);
+              });
       targetComposite.applyFieldChanges();
       return;
     }

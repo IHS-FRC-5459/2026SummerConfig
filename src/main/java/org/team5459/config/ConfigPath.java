@@ -14,8 +14,19 @@ final class ConfigPath {
   private ConfigPath() {}
 
   static ConfigNode resolve(Map<String, ConfigNode> root, String path) {
+    return resolve(root, path, true);
+  }
+
+  /** Resolves a path without logging missing-path warnings (used by insert / existence checks). */
+  static ConfigNode resolveQuiet(Map<String, ConfigNode> root, String path) {
+    return resolve(root, path, false);
+  }
+
+  private static ConfigNode resolve(Map<String, ConfigNode> root, String path, boolean warn) {
     if (path == null || path.isBlank()) {
-      ConfigWarnings.warnMissingPath(path);
+      if (warn) {
+        ConfigWarnings.warnMissingPath(path);
+      }
       return null;
     }
 
@@ -26,20 +37,26 @@ final class ConfigPath {
     for (int index = 0; index < parts.length; index++) {
       String part = parts[index];
       if (part.isBlank()) {
-        ConfigWarnings.warnMissingPath(path);
+        if (warn) {
+          ConfigWarnings.warnMissingPath(path);
+        }
         return null;
       }
 
       node = current.get(part);
       if (node == null) {
-        ConfigWarnings.warnMissingPath(path);
+        if (warn) {
+          ConfigWarnings.warnMissingPath(path);
+        }
         return null;
       }
 
       if (index < parts.length - 1) {
         Map<String, ConfigNode> childEntries = node.getChildEntries();
         if (childEntries == null) {
-          ConfigWarnings.warnNotNavigable(path, part);
+          if (warn) {
+            ConfigWarnings.warnNotNavigable(path, part);
+          }
           return null;
         }
         current = childEntries;

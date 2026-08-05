@@ -16,9 +16,10 @@
  *   <li><b>Debug</b> ({@code !FMS} and {@code Config/DebugMode}): NT edits update the live
  *       document; getters read that NT-backed document; edits autosave to {@code
  *       config-cache.json}. Promote via {@code Config/Save} or when {@code elastic-layout.json}
- *       content changes.
+ *       content changes. New scalars under {@code /Config} auto-register (Elastic Custom + rebind).
  *   <li><b>Match</b> (FMS, or DebugMode off): NT is write-only for display; getters read JSON
  *       defaults; no JSON writes.
+ *   <li>Create constants via JSON, {@code /Config/templates/template*} widgets, or Custom+rebind.
  *   <li>Subsystems read through {@link org.team5459.config.ConfigDocument} typed getters.
  * </ol>
  *

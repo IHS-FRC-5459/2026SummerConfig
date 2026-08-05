@@ -1,58 +1,235 @@
 {
-  "Arm" : {
-    "type" : "folder",
-    "value" : {
-      "PIDController" : {
-        "type" : "PIDController",
-        "value" : {
-          "p" : {
-            "type" : "double",
-            "value" : 0.5
+  "Arm": {
+    "type": "folder",
+    "value": {
+      "PIDController": {
+        "type": "PIDController",
+        "value": {
+          "p": {
+            "type": "double",
+            "value": 0.7
           },
-          "i" : {
-            "type" : "double",
-            "value" : 0.03
+          "i": {
+            "type": "double",
+            "value": 0.03
           },
-          "d" : {
-            "type" : "double",
-            "value" : 0.01
+          "d": {
+            "type": "double",
+            "value": 0.01
           }
         }
       },
-      "Rotation" : {
-        "type" : "Rotation2d",
-        "value" : {
-          "deg" : {
-            "type" : "double",
-            "value" : 100.0
+      "Rotation": {
+        "type": "Rotation2d",
+        "value": {
+          "deg": {
+            "type": "double",
+            "value": 100.0
           }
         }
       },
-      "Setpoints" : {
-        "type" : "double[]",
-        "value" : [ 0.0, 20.0, 45.0 ]
+      "Setpoints": {
+        "type": "double[]",
+        "value": [
+          0.0,
+          20.0,
+          45.0
+        ]
+      },
+      "operatorOffset": {
+        "type": "double",
+        "value": 110.0
       }
     }
   },
-  "Elevator" : {
-    "type" : "folder",
-    "value" : {
-      "PIDController" : {
-        "type" : "PIDController",
-        "value" : {
-          "p" : {
-            "type" : "double",
-            "value" : 0.2
+  "Elevator": {
+    "type": "folder",
+    "value": {
+      "PIDController": {
+        "type": "PIDController",
+        "value": {
+          "p": {
+            "type": "double",
+            "value": 0.2
           },
-          "i" : {
-            "type" : "double",
-            "value" : 0.0
+          "i": {
+            "type": "double",
+            "value": 0.0
           },
-          "d" : {
-            "type" : "double",
-            "value" : 0.002
+          "d": {
+            "type": "double",
+            "value": 0.002
           }
         }
+      },
+      "myBool": {
+        "type": "boolean",
+        "value": true
+      }
+    }
+  },
+  "templates": {
+    "type": "folder",
+    "value": {
+      "templateDouble": {
+        "type": "double",
+        "value": 0.0
+      },
+      "templateInt": {
+        "type": "int",
+        "value": 0
+      },
+      "templateBoolean": {
+        "type": "boolean",
+        "value": false
+      },
+      "templateString": {
+        "type": "String",
+        "value": ""
+      },
+      "templateDoubleArray": {
+        "type": "double[]",
+        "value": [
+          0.0
+        ]
+      },
+      "templateIntArray": {
+        "type": "int[]",
+        "value": [
+          0
+        ]
+      },
+      "templatePIDController": {
+        "type": "PIDController",
+        "value": {
+          "p": {
+            "type": "double",
+            "value": 10.0
+          },
+          "i": {
+            "type": "double",
+            "value": 0.0
+          },
+          "d": {
+            "type": "double",
+            "value": 0.0
+          }
+        }
+      },
+      "templateRotation2d": {
+        "type": "Rotation2d",
+        "value": {
+          "deg": {
+            "type": "double",
+            "value": 0.0
+          }
+        }
+      },
+      "templateTranslation2d": {
+        "type": "Translation2d",
+        "value": {
+          "x": {
+            "type": "double",
+            "value": 0.0
+          },
+          "y": {
+            "type": "double",
+            "value": 0.0
+          }
+        }
+      },
+      "templatePose2d": {
+        "type": "Pose2d",
+        "value": {
+          "x": {
+            "type": "double",
+            "value": 0.0
+          },
+          "y": {
+            "type": "double",
+            "value": 0.0
+          },
+          "deg": {
+            "type": "double",
+            "value": 0.0
+          }
+        }
+      },
+      "templateSimpleMotorFeedforward": {
+        "type": "SimpleMotorFeedforward",
+        "value": {
+          "ks": {
+            "type": "double",
+            "value": 0.0
+          },
+          "kv": {
+            "type": "double",
+            "value": 0.0
+          },
+          "ka": {
+            "type": "double",
+            "value": 0.0
+          }
+        }
+      },
+      "templateArmFeedforward": {
+        "type": "ArmFeedforward",
+        "value": {
+          "ks": {
+            "type": "double",
+            "value": 0.0
+          },
+          "kg": {
+            "type": "double",
+            "value": 0.0
+          },
+          "kv": {
+            "type": "double",
+            "value": 0.0
+          },
+          "ka": {
+            "type": "double",
+            "value": 0.0
+          }
+        }
+      },
+      "templateElevatorFeedforward": {
+        "type": "ElevatorFeedforward",
+        "value": {
+          "ks": {
+            "type": "double",
+            "value": 0.0
+          },
+          "kg": {
+            "type": "double",
+            "value": 0.0
+          },
+          "kv": {
+            "type": "double",
+            "value": 0.0
+          },
+          "ka": {
+            "type": "double",
+            "value": 0.0
+          }
+        }
+      }
+    }
+  },
+  "PIDController3": {
+    "type": "PIDController",
+    "value": {
+      "p": {
+        "type": "double",
+        "value": 10.0
+      },
+      "i": {
+        "type": "double",
+        "value": 0.0
+      },
+      "d": {
+        "type": "double",
+        "value": 0.0
       }
     }
   }

@@ -33,10 +33,18 @@ public final class ConfigSaveButton {
     saveEntry.setBoolean(false);
     return NetworkTableListener.createListener(
         saveEntry,
-        EnumSet.of(NetworkTableEvent.Kind.kValueRemote),
+        EnumSet.of(NetworkTableEvent.Kind.kValueRemote, NetworkTableEvent.Kind.kValueLocal),
         event -> {
-          if (event.valueData != null && event.valueData.value.getBoolean()) {
+          if (event.valueData == null
+              || event.valueData.value == null
+              || !event.valueData.value.getBoolean()) {
+            return;
+          }
+          try {
+            System.out.println("[Config] Save pressed — promoting to robot-config.json");
             onSave.run();
+          } finally {
+            // Always clear so the toggle is not stuck if promote is ignored or throws.
             saveEntry.setBoolean(false);
           }
         });

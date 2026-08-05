@@ -27,6 +27,8 @@ class Step4NetworkTablePublishTest {
     assertEquals(0.1, pidTable.getEntry("p").getDouble(0.0));
     assertEquals(0.01, pidTable.getEntry("i").getDouble(0.0));
     assertEquals(0.001, pidTable.getEntry("d").getDouble(0.0));
+    assertEquals("PIDController", pidTable.getEntry(".type").getString(""));
+    assertEquals(0.0, pidTable.getEntry("setpoint").getDouble(-1.0));
     assertEquals(100.0, armTable.getSubTable("Rotation").getEntry("deg").getDouble(0.0));
     assertArrayEquals(
         new double[] {0.0, 20.0, 45.0},

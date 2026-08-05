@@ -18,22 +18,7 @@
               "topic": "/Config/Arm/operatorOffset",
               "period": 0.06,
               "data_type": "double",
-              "value": 110.0,
               "show_submit_button": false
-            }
-          },
-          {
-            "title": "myDouble",
-            "x": 1152.0,
-            "y": 256.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/SmartDashboard/myDouble",
-              "period": 0.06,
-              "data_type": "double",
-              "show_submit_button": true
             }
           },
           {
@@ -59,8 +44,7 @@
             "properties": {
               "topic": "/Config/Save",
               "period": 0.06,
-              "data_type": "boolean",
-              "value": true
+              "data_type": "boolean"
             }
           },
           {
@@ -74,7 +58,6 @@
               "topic": "/Config/Arm/PIDController/p",
               "period": 0.06,
               "data_type": "double",
-              "value": 0.5,
               "show_submit_button": false
             }
           }
@@ -97,7 +80,6 @@
               "topic": "/Config/Arm/PIDController/d",
               "period": 0.06,
               "data_type": "double",
-              "value": 0.01,
               "show_submit_button": false
             }
           },
@@ -112,7 +94,6 @@
               "topic": "/Config/Arm/PIDController/i",
               "period": 0.06,
               "data_type": "double",
-              "value": 0.03,
               "show_submit_button": false
             }
           },
@@ -127,11 +108,71 @@
               "topic": "/Config/Arm/operatorOffset",
               "period": 0.06,
               "data_type": "double",
-              "value": 112.0,
               "show_submit_button": false
             }
           }
         ]
+      }
+    },
+    {
+      "name": "Create",
+      "grid_layout": {
+        "layouts": [
+          {
+            "title": "Create Config Entry",
+            "x": 256.0,
+            "y": 256.0,
+            "width": 384.0,
+            "height": 512.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "TOP"
+            },
+            "children": [
+              {
+                "title": "Type",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "ComboBox Chooser",
+                "properties": {
+                  "topic": "/Config/Create/Type",
+                  "period": 0.06,
+                  "sort_options": false
+                }
+              },
+              {
+                "title": "Path",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Config/Create/Path",
+                  "period": 0.06,
+                  "data_type": "string",
+                  "show_submit_button": true
+                }
+              },
+              {
+                "title": "Go",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Toggle Switch",
+                "properties": {
+                  "topic": "/Config/Create/Go",
+                  "period": 0.06,
+                  "data_type": "boolean"
+                }
+              }
+            ]
+          }
+        ],
+        "containers": []
       }
     }
   ]

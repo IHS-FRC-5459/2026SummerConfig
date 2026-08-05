@@ -38,7 +38,7 @@ final class ConfigJsonWriter {
     }
   }
 
-  private static void writeNode(ConfigNode node, JsonGenerator generator) throws IOException {
+  static void writeNode(ConfigNode node, JsonGenerator generator) throws IOException {
     generator.writeStartObject();
     generator.writeStringField("type", ConfigTypeRegistry.typeNameFor(node.getClass()));
     generator.writeFieldName("value");
