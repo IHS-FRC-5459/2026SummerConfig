@@ -1,16 +1,12 @@
 package org.team5459.config;
 
 import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.NetworkTableListener;
-import java.util.EnumSet;
 
 /**
  * Elastic Delete panel under {@code /Config/Delete}: path chooser + Go toggle (debug only).
  *
- * <p>Go is handled on {@code kValueRemote} only (Elastic Toggle Button). Selecting {@link
+ * <p>Go uses {@link ConfigDashboardPulse} so Elastic owns the boolean topic. Selecting {@link
  * ConfigDeleteHelper#NONE_OPTION} is a no-op.
  */
 public final class ConfigDeletePanel implements AutoCloseable {
@@ -22,32 +18,23 @@ public final class ConfigDeletePanel implements AutoCloseable {
 
   private final ConfigDocument document;
   private final Runnable onDeleted;
-  private final NetworkTableListener goListener;
+  private final ConfigDashboardPulse goPulse;
 
   public ConfigDeletePanel(ConfigDocument document, Runnable onDeleted) {
     this.document = document;
     this.onDeleted = onDeleted;
     publish();
-    NetworkTableEntry goEntry = deleteTable().getEntry(GO_ENTRY);
-    this.goListener =
-        NetworkTableListener.createListener(
-            goEntry,
-            EnumSet.of(NetworkTableEvent.Kind.kValueRemote),
-            event -> {
-              if (event.valueData == null
-                  || event.valueData.value == null
-                  || !event.valueData.value.getBoolean()) {
-                return;
-              }
-              goEntry.setBoolean(false);
-              handleGo();
-            });
+    this.goPulse =
+        new ConfigDashboardPulse("/" + TABLE + "/" + SUBTABLE + "/" + GO_ENTRY, "Delete/Go");
   }
 
-  /** Publishes path chooser and Go=false. */
+  ConfigDashboardPulse goPulse() {
+    return goPulse;
+  }
+
+  /** Publishes path chooser. Does not publish Go (Elastic owns it). */
   public void publish() {
     refreshPathOptions();
-    deleteTable().getEntry(GO_ENTRY).setBoolean(false);
     System.out.println(
         "[Config] *** Reload Elastic Delete tab from src/main/deploy/elastic-layout.json"
             + " (dashboard does NOT auto-update). ***");
@@ -64,9 +51,12 @@ public final class ConfigDeletePanel implements AutoCloseable {
     publishStringChooser(pathTable, options, preferred);
   }
 
-  /** Acknowledges path chooser selection. Go is handled by the remote listener. */
+  /** Acknowledges path chooser and handles Go rising edge. */
   public void poll() {
     acknowledgeChooser(deleteTable().getSubTable(PATH_SUBTABLE));
+    if (goPulse.pollRisingEdge()) {
+      handleGo();
+    }
   }
 
   private void handleGo() {
@@ -81,7 +71,6 @@ public final class ConfigDeletePanel implements AutoCloseable {
         onDeleted.run();
       }
     }
-    delete.getEntry(GO_ENTRY).setBoolean(false);
   }
 
   private static void acknowledgeChooser(NetworkTable table) {
@@ -142,7 +131,6 @@ public final class ConfigDeletePanel implements AutoCloseable {
 
   @Override
   public void close() {
-    goListener.close();
-    deleteTable().getEntry(GO_ENTRY).setBoolean(false);
+    goPulse.close();
   }
 }

@@ -2,21 +2,15 @@ package org.team5459.config;
 
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.NetworkTableListener;
 import edu.wpi.first.networktables.NetworkTableType;
-import java.util.EnumSet;
 
 /**
  * Elastic Create panel under {@code /Config/Create}: type chooser, parent folder chooser, name, and
  * Go toggle.
  *
- * <p>Go is handled on {@code kValueRemote} only (Elastic Toggle Button). The robot clearing Go to
- * {@code false} is local and must not re-trigger create.
- *
- * <p>Name is owned by Elastic (Text Display). The robot only reads it and clears it after a
- * successful create.
+ * <p>Go uses {@link ConfigDashboardPulse} so Elastic owns the boolean topic. Name is owned by
+ * Elastic (Text Display); the robot only reads it and clears it after a successful create.
  */
 public final class ConfigCreatePanel implements AutoCloseable {
 
@@ -30,29 +24,23 @@ public final class ConfigCreatePanel implements AutoCloseable {
 
   private final ConfigDocument document;
   private final Runnable onCreated;
-  private final NetworkTableListener goListener;
+  private final ConfigDashboardPulse goPulse;
 
   public ConfigCreatePanel(ConfigDocument document, Runnable onCreated) {
     this.document = document;
     this.onCreated = onCreated;
     publish();
-    NetworkTableEntry goEntry = createTable().getEntry(GO_ENTRY);
-    this.goListener =
-        NetworkTableListener.createListener(
-            goEntry,
-            EnumSet.of(NetworkTableEvent.Kind.kValueRemote),
-            event -> {
-              if (event.valueData == null
-                  || event.valueData.value == null
-                  || !isTruthy(event.valueData.value)) {
-                return;
-              }
-              goEntry.setBoolean(false);
-              handleGo();
-            });
+    this.goPulse =
+        new ConfigDashboardPulse("/" + TABLE + "/" + SUBTABLE + "/" + GO_ENTRY, "Create/Go");
   }
 
-  /** Publishes type/folder choosers and Go=false. Does not overwrite Name. */
+  ConfigDashboardPulse goPulse() {
+    return goPulse;
+  }
+
+  /**
+   * Publishes type/folder choosers. Does not publish Go (Elastic owns it). Does not overwrite Name.
+   */
   public void publish() {
     NetworkTable create = createTable();
     publishStringChooser(
@@ -63,15 +51,14 @@ public final class ConfigCreatePanel implements AutoCloseable {
 
     NetworkTableEntry name = create.getEntry(NAME_ENTRY);
     if (!name.exists()) {
-      name.setString("");
+      // Subscribe-only default so Elastic Text Display can publish Name.
+      name.setDefaultString("");
     }
 
     NetworkTableEntry legacyPulse = create.getEntry(LEGACY_GO_PULSE_ENTRY);
     if (legacyPulse.exists()) {
       legacyPulse.unpublish();
     }
-
-    create.getEntry(GO_ENTRY).setBoolean(false);
   }
 
   /** Rebuilds Folder chooser options from the current document. */
@@ -85,10 +72,13 @@ public final class ConfigCreatePanel implements AutoCloseable {
     publishStringChooser(folderTable, options, preferred);
   }
 
-  /** Acknowledges chooser selections. Go is handled by the remote listener. */
+  /** Acknowledges choosers and handles Go rising edge. */
   public void poll() {
     acknowledgeChooser(createTable().getSubTable(TYPE_SUBTABLE));
     acknowledgeChooser(createTable().getSubTable(FOLDER_SUBTABLE));
+    if (goPulse.pollRisingEdge()) {
+      handleGo();
+    }
   }
 
   static boolean isGoPulsed(NetworkTableEntry goEntry) {
@@ -103,15 +93,6 @@ public final class ConfigCreatePanel implements AutoCloseable {
       return goEntry.getInteger(0) != 0;
     }
     return goEntry.getBoolean(false);
-  }
-
-  private static boolean isTruthy(edu.wpi.first.networktables.NetworkTableValue value) {
-    return switch (value.getType()) {
-      case kBoolean -> value.getBoolean();
-      case kDouble, kFloat -> Math.abs(value.getDouble()) > 1e-9;
-      case kInteger -> value.getInteger() != 0;
-      default -> false;
-    };
   }
 
   private void handleGo() {
@@ -151,9 +132,9 @@ public final class ConfigCreatePanel implements AutoCloseable {
   }
 
   public void clearForm() {
-    NetworkTable create = createTable();
-    create.getEntry(NAME_ENTRY).setString("");
-    create.getEntry(GO_ENTRY).setBoolean(false);
+    NetworkTableEntry name = createTable().getEntry(NAME_ENTRY);
+    name.setString("");
+    name.unpublish();
   }
 
   private static void acknowledgeChooser(NetworkTable table) {
@@ -214,7 +195,6 @@ public final class ConfigCreatePanel implements AutoCloseable {
 
   @Override
   public void close() {
-    goListener.close();
-    createTable().getEntry(GO_ENTRY).setBoolean(false);
+    goPulse.close();
   }
 }

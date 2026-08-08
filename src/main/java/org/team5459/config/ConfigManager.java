@@ -51,6 +51,8 @@ public class ConfigManager {
   private boolean promoting;
   private boolean autosaving;
   private boolean suppressAutosave;
+  private long lastButtonHeartbeatMs;
+  private boolean loggedPeriodicStart;
 
   public ConfigManager(File configFile, File cacheFile) {
     this(configFile, cacheFile, sibling(configFile, "elastic-layout.json"));
@@ -89,15 +91,26 @@ public class ConfigManager {
       System.out.println(
           "[Config] Match mode: getters use robot-config.json defaults; NT writebacks ignored");
     }
+    System.out.println(
+        "[Config] Manager ready. Watch robot console for [Config][Pulse] / [Config][Buttons]"
+            + " while clicking Save / Create Go / Delete Go.");
   }
 
   public void periodic() {
+    if (!loggedPeriodicStart) {
+      loggedPeriodicStart = true;
+      System.out.println(
+          "[Config] periodic() running (configManager is live). debugActive=" + debugActive);
+    }
+
     if (saveButton != null) {
       saveButton.poll();
     }
 
     boolean wantDebug = debugMode.isDebug();
     if (wantDebug != debugActive) {
+      System.out.println(
+          "[Config] DebugMode transition wantDebug=" + wantDebug + " was=" + debugActive);
       if (wantDebug) {
         enableDebug();
       } else {
@@ -128,14 +141,57 @@ public class ConfigManager {
           ConfigDeletePanel.GO_ENTRY,
           "Delete");
     }
+
+    logButtonHeartbeat();
+  }
+
+  /** Every 2s: dump Save / Create Go / Delete Go NT visibility for Elastic debugging. */
+  private void logButtonHeartbeat() {
+    long now = System.currentTimeMillis();
+    if (now - lastButtonHeartbeatMs < 2000L) {
+      return;
+    }
+    lastButtonHeartbeatMs = now;
+
+    String saveStatus = saveButton != null ? saveButton.pulse().statusLine() : "Save{MISSING}";
+    String createStatus =
+        createPanel != null ? createPanel.goPulse().statusLine() : "Create/Go{panel=null}";
+    String deleteStatus =
+        deletePanel != null ? deletePanel.goPulse().statusLine() : "Delete/Go{panel=null}";
+
+    // Also read raw entry API in case subscriber and entry disagree.
+    var inst = NetworkTableInstance.getDefault();
+    boolean rawSave = inst.getTable("Config").getEntry("Save").getBoolean(false);
+    boolean rawCreate =
+        inst.getTable("Config").getSubTable("Create").getEntry("Go").getBoolean(false);
+    boolean rawDelete =
+        inst.getTable("Config").getSubTable("Delete").getEntry("Go").getBoolean(false);
+    boolean rawDebug = inst.getTable("Config").getEntry("DebugMode").getBoolean(true);
+
+    System.out.println(
+        "[Config][Buttons] debugActive="
+            + debugActive
+            + " DebugMode(raw)="
+            + rawDebug
+            + " | "
+            + saveStatus
+            + " rawSave="
+            + rawSave
+            + " | "
+            + createStatus
+            + " rawCreateGo="
+            + rawCreate
+            + " | "
+            + deleteStatus
+            + " rawDeleteGo="
+            + rawDelete);
   }
 
   private static void clearGoIfPulsed(String table, String sub, String goEntry, String label) {
     var entry =
         NetworkTableInstance.getDefault().getTable(table).getSubTable(sub).getEntry(goEntry);
-    if (ConfigCreatePanel.isGoPulsed(entry)) {
+    if (entry.getBoolean(false)) {
       entry.setBoolean(false);
-      NetworkTableInstance.getDefault().flush();
       ConfigWarnings.warn(label + " ignored: turn on Config/DebugMode first");
     }
   }
@@ -170,18 +226,59 @@ public class ConfigManager {
     }
     promoting = true;
     try {
-      // PIDController Elastic widget only writes NT on "Publish Values"; pull so Save persists
-      // those values (and any listener-missed scalars) instead of stale in-memory defaults.
-      if (dynamicRegistrar != null) {
-        dynamicRegistrar.poll();
-      }
+      // Do not poll the dynamic registrar here: registration republishes the live document and can
+      // overwrite fresher Elastic values on NT before we pull.
+      NetworkTableInstance.getDefault().flush();
+      logPromoteSample("before-pull");
       TypedNetworkTablePull.pull(liveDocument);
+      logPromoteSample("after-pull");
+
       TypedConfigSaver.save(configFile, liveDocument);
-      defaultsDocument.replaceRoot(TypedConfigLoader.load(configFile).getRootEntries());
+      TypedConfigSaver.save(cacheFile, liveDocument);
+
+      ConfigDocument written = TypedConfigLoader.load(configFile);
+      defaultsDocument.replaceRoot(written.getRootEntries());
+      System.out.println(
+          "[Config][Promote] verified on disk Arm/PIDController/p="
+              + written.getDouble("Arm/PIDController/p")
+              + " Arm/operatorOffset="
+              + written.getDouble("Arm/operatorOffset")
+              + " keys="
+              + written.getRootEntries().keySet());
       System.out.println("[Config] Promoted live values to " + configFile.getAbsolutePath());
     } finally {
       promoting = false;
     }
+  }
+
+  private void logPromoteSample(String phase) {
+    double docP = liveDocument.getDouble("Arm/PIDController/p");
+    double docOffset = liveDocument.getDouble("Arm/operatorOffset");
+    var armPid =
+        NetworkTableInstance.getDefault()
+            .getTable("Config")
+            .getSubTable("Arm")
+            .getSubTable("PIDController");
+    double ntP = armPid.getEntry("p").getDouble(Double.NaN);
+    double ntOffset =
+        NetworkTableInstance.getDefault()
+            .getTable("Config")
+            .getSubTable("Arm")
+            .getEntry("operatorOffset")
+            .getDouble(Double.NaN);
+    System.out.println(
+        "[Config][Promote] "
+            + phase
+            + " doc p="
+            + docP
+            + " nt p="
+            + ntP
+            + " doc offset="
+            + docOffset
+            + " nt offset="
+            + ntOffset
+            + " rootKeys="
+            + liveDocument.getRootEntries().keySet());
   }
 
   public void close() {

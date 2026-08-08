@@ -1,24 +1,6 @@
 {
   "random" : {
     "type" : "folder",
-    "value" : {
-      "controller" : {
-        "type" : "PIDController",
-        "value" : {
-          "p" : {
-            "type" : "double",
-            "value" : 0.0
-          },
-          "d" : {
-            "type" : "double",
-            "value" : 0.0
-          },
-          "setpoint" : {
-            "type" : "double",
-            "value" : 0.0
-          }
-        }
-      }
-    }
+    "value" : { }
   }
 }
