@@ -2,6 +2,7 @@ package org.team5459.config;
 
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.NetworkTableType;
 import edu.wpi.first.wpilibj.DriverStation;
 
 /**
@@ -23,8 +24,35 @@ public final class ConfigDebugMode {
 
   public ConfigDebugMode(String tableName, String entryName) {
     this.debugEntry = NetworkTableInstance.getDefault().getTable(tableName).getEntry(entryName);
-    if (!debugEntry.exists()) {
-      debugEntry.setBoolean(true);
+    // Always publish a typed boolean. A leftover kUnassigned topic (exists but untyped) blocks
+    // Elastic Toggle Switch writes the same way Save/Go did.
+    ensureTypedBoolean(true);
+    System.out.println(
+        "[Config][DebugMode] published typed boolean val="
+            + debugEntry.getBoolean(true)
+            + " exists="
+            + debugEntry.exists()
+            + " type="
+            + debugEntry.getType());
+  }
+
+  /** Re-asserts a typed boolean publisher so Elastic can use updateDataFromTopic. */
+  void ensureTypedBoolean(boolean defaultIfMissing) {
+    NetworkTableType before = debugEntry.getType();
+    boolean value =
+        before == NetworkTableType.kBoolean
+            ? debugEntry.getBoolean(defaultIfMissing)
+            : defaultIfMissing;
+    debugEntry.setBoolean(value);
+    NetworkTableType after = debugEntry.getType();
+    if (before != after || after != NetworkTableType.kBoolean) {
+      System.out.println(
+          "[Config][DebugMode] ensureTypedBoolean before="
+              + before
+              + " after="
+              + after
+              + " val="
+              + value);
     }
   }
 

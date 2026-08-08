@@ -51,6 +51,7 @@ public class ConfigManager {
   private boolean promoting;
   private boolean autosaving;
   private boolean suppressAutosave;
+  private boolean pendingStructureChange;
   private long lastButtonHeartbeatMs;
   private boolean loggedPeriodicStart;
 
@@ -125,6 +126,11 @@ public class ConfigManager {
       if (deletePanel != null) {
         deletePanel.poll();
       }
+      if (pendingStructureChange) {
+        pendingStructureChange = false;
+        System.out.println("[Config] Applying deferred Create/Delete structure refresh");
+        applyDocumentStructureChange();
+      }
       promoteWatcher.poll();
       if (dynamicRegistrar != null) {
         dynamicRegistrar.poll();
@@ -159,7 +165,6 @@ public class ConfigManager {
     String deleteStatus =
         deletePanel != null ? deletePanel.goPulse().statusLine() : "Delete/Go{panel=null}";
 
-    // Also read raw entry API in case subscriber and entry disagree.
     var inst = NetworkTableInstance.getDefault();
     boolean rawSave = inst.getTable("Config").getEntry("Save").getBoolean(false);
     boolean rawCreate =
@@ -222,6 +227,7 @@ public class ConfigManager {
       return;
     }
     if (promoting) {
+      System.out.println("[Config] Promote ignored: already promoting");
       return;
     }
     promoting = true;
@@ -290,11 +296,15 @@ public class ConfigManager {
   }
 
   private void enableDebug() {
+    debugMode.ensureTypedBoolean(true);
     TypedConfigOverlay.apply(defaultsDocument, liveDocument);
     TypedConfigOverlay.applyFile(cacheFile, liveDocument);
     TypedNetworkTableSync.publish(liveDocument);
     TypedNetworkTablePull.pull(liveDocument);
     debugActive = true;
+    if (saveButton != null) {
+      saveButton.ensurePublished();
+    }
     startConfigListeners();
     startDynamicRegistrar();
     startCreatePanel();
@@ -307,6 +317,7 @@ public class ConfigManager {
     disableDebugListenersOnly();
     TypedNetworkTableSync.publish(defaultsDocument);
     debugActive = false;
+    pendingStructureChange = false;
     System.out.println(
         "[Config] Match mode: getters use robot-config.json defaults; NT writebacks ignored");
   }
@@ -314,7 +325,7 @@ public class ConfigManager {
   private void startConfigListeners() {
     closeConfigValueListeners();
     // Initial setDouble/setBoolean while attaching listeners fires kValueLocal; ignore those so we
-    // do not recurse into autosave/pull during Create/Delete structure updates.
+    // do not recurse into autosave during Create/Delete structure updates.
     suppressAutosave = true;
     try {
       NetworkTableListener[] listeners =
@@ -346,6 +357,12 @@ public class ConfigManager {
   }
 
   private void onDocumentStructureChanged() {
+    // Defer until after Create/Delete Go handling finishes so we do not close the pulse mid-press.
+    System.out.println("[Config] Structure change requested — deferring until end of periodic");
+    pendingStructureChange = true;
+  }
+
+  private void applyDocumentStructureChange() {
     if (!debugActive) {
       return;
     }
@@ -357,6 +374,9 @@ public class ConfigManager {
     if (deletePanel != null) {
       deletePanel.refreshPathOptions();
     }
+    if (saveButton != null) {
+      saveButton.ensurePublished();
+    }
     autosaveCache();
   }
 
@@ -366,9 +386,6 @@ public class ConfigManager {
     }
     autosaving = true;
     try {
-      // Do not pull here: Create/Delete treat the document as source of truth, and listener attach
-      // floods would pull+write on every setDouble. Save/promote pulls NT before writing
-      // robot-config.json.
       TypedConfigSaver.save(cacheFile, liveDocument);
       System.out.println("[Config] Saved config cache: " + cacheFile.getAbsolutePath());
     } finally {

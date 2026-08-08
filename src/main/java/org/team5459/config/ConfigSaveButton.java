@@ -4,8 +4,8 @@ package org.team5459.config;
  * Momentary NetworkTables Save control that promotes the live debug document into {@code
  * robot-config.json}.
  *
- * <p>Uses a dashboard-owned pulse ({@link ConfigDashboardPulse}) so Elastic Toggle Button can
- * publish {@code /Config/Save}. Robot-first {@code setBoolean} ownership blocks Elastic publishes.
+ * <p>Uses a dashboard pulse ({@link ConfigDashboardPulse}): robot publishes a typed boolean so
+ * Elastic Toggle Button can write via {@code updateDataFromTopic}.
  */
 public final class ConfigSaveButton implements AutoCloseable {
   public static final String kDefaultTableName = "Config";
@@ -23,8 +23,15 @@ public final class ConfigSaveButton implements AutoCloseable {
     return pulse;
   }
 
+  /** Re-assert typed boolean publisher (call when entering debug). */
+  public void ensurePublished() {
+    pulse.ensureTypedBoolean();
+  }
+
   /** No-op retained for call sites that previously forced Save=false. */
-  public void publish() {}
+  public void publish() {
+    ensurePublished();
+  }
 
   /**
    * Detects a dashboard Save press. Call from robot periodic.

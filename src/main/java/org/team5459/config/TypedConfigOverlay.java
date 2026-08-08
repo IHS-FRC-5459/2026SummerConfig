@@ -27,7 +27,6 @@ public final class TypedConfigOverlay {
     }
     ConfigDocument cache = TypedConfigLoader.load(cacheFile);
     apply(cache, target);
-    System.out.println("Applied config cache from " + cacheFile.getAbsolutePath());
   }
 
   /** Overlays matching values from {@code source} onto {@code target}, inserting missing paths. */

@@ -32,15 +32,14 @@ public final class ConfigCreatePanel implements AutoCloseable {
     publish();
     this.goPulse =
         new ConfigDashboardPulse("/" + TABLE + "/" + SUBTABLE + "/" + GO_ENTRY, "Create/Go");
+    System.out.println("[Config] Create panel started");
   }
 
   ConfigDashboardPulse goPulse() {
     return goPulse;
   }
 
-  /**
-   * Publishes type/folder choosers. Does not publish Go (Elastic owns it). Does not overwrite Name.
-   */
+  /** Publishes type/folder choosers. Does not overwrite Name. */
   public void publish() {
     NetworkTable create = createTable();
     publishStringChooser(
@@ -101,8 +100,22 @@ public final class ConfigCreatePanel implements AutoCloseable {
         readChooserSelection(create.getSubTable(TYPE_SUBTABLE), ConfigCreateHelper.DEFAULT_TYPE);
     String folder =
         readChooserSelection(create.getSubTable(FOLDER_SUBTABLE), ConfigCreateHelper.ROOT_FOLDER);
-    String name = create.getEntry(NAME_ENTRY).getString("");
+    NetworkTableEntry nameEntry = create.getEntry(NAME_ENTRY);
+    String name = nameEntry.getString("");
     String path = ConfigCreateHelper.buildPath(folder, name);
+    System.out.println(
+        "[Config] Create Go: type="
+            + type
+            + " folder='"
+            + folder
+            + "' name='"
+            + name
+            + "' path="
+            + path
+            + " nameExists="
+            + nameEntry.exists()
+            + " nameType="
+            + nameEntry.getType());
     if (path == null) {
       ConfigWarnings.warn(
           "Create ignored: publish a Name first (Enter or submit), folder='"
@@ -113,21 +126,15 @@ public final class ConfigCreatePanel implements AutoCloseable {
       return;
     }
 
-    System.out.println(
-        "[Config] Create requested type="
-            + type
-            + " folder="
-            + folder
-            + " name="
-            + name
-            + " -> "
-            + path);
     if (ConfigCreateHelper.create(document, type, path)) {
+      System.out.println("[Config] Create succeeded: " + path);
       clearForm();
       refreshFolderOptions();
       if (onCreated != null) {
         onCreated.run();
       }
+    } else {
+      System.out.println("[Config] Create failed / already exists: " + path);
     }
   }
 

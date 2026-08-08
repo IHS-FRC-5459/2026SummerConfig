@@ -17,7 +17,7 @@ import org.team5459.config.types.PIDControllerNode;
  *     Widgets List</a>
  */
 class Step10ElasticWidgetTypesTest {
-  private static final Path DEPLOY_CONFIG = Path.of("src/main/deploy/robot-config.json");
+  private static final Path TEST_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   @Test
   void mapsPidControllerNodeToElasticType() {
@@ -27,7 +27,7 @@ class Step10ElasticWidgetTypesTest {
 
   @Test
   void publishesTypeAndSetpointForPidTables() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     TypedNetworkTableSync.publish(document);
 
     var armPid =

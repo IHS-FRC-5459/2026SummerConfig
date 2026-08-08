@@ -17,7 +17,7 @@ import org.team5459.config.types.PIDControllerNode;
 
 /** Templates folder + debug auto-register under /Config. */
 class Step9TemplatesAndDynamicRegisterTest {
-  private static final Path DEPLOY_CONFIG = Path.of("src/main/deploy/robot-config.json");
+  private static final Path TEST_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   @BeforeAll
   static void initHal() {
@@ -25,8 +25,8 @@ class Step9TemplatesAndDynamicRegisterTest {
   }
 
   @Test
-  void deployConfigHasArmAndElevatorFolders() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+  void testConfigHasArmAndElevatorFolders() {
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertNotNull(document.getNode("Arm"));
     assertNotNull(document.getNode("Elevator"));
     assertTrue(document.getNode("Arm/PIDController") instanceof PIDControllerNode);
@@ -35,7 +35,7 @@ class Step9TemplatesAndDynamicRegisterTest {
 
   @Test
   void insertLeafCreatesIntermediateFolders() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertTrue(document.insertLeaf("Intake/rollerSpeed", new DoubleNode(0.4)));
     assertEquals(0.4, document.getDouble("Intake/rollerSpeed"), 1e-9);
     assertFalse(document.insertLeaf("Intake/rollerSpeed", new DoubleNode(1.0)));
@@ -46,7 +46,7 @@ class Step9TemplatesAndDynamicRegisterTest {
     Path configFile = tempDirectory.resolve("robot-config.json");
     Path cacheFile = tempDirectory.resolve("config-cache.json");
     Path watchFile = tempDirectory.resolve("elastic-layout.json");
-    Files.copy(DEPLOY_CONFIG, configFile);
+    Files.copy(TEST_CONFIG, configFile);
     Files.writeString(watchFile, "{\"version\":1}");
     // Stabilize mtime so the promote watcher does not treat startup as a Save As.
     watchFile.toFile().setLastModified(System.currentTimeMillis() - 60_000);
@@ -82,7 +82,7 @@ class Step9TemplatesAndDynamicRegisterTest {
     Path configFile = tempDirectory.resolve("robot-config.json");
     Path cacheFile = tempDirectory.resolve("config-cache.json");
     Path watchFile = tempDirectory.resolve("elastic-layout.json");
-    Files.copy(DEPLOY_CONFIG, configFile);
+    Files.copy(TEST_CONFIG, configFile);
     Files.writeString(watchFile, "{\"version\":1}");
     watchFile.toFile().setLastModified(System.currentTimeMillis() - 60_000);
 
@@ -124,7 +124,7 @@ class Step9TemplatesAndDynamicRegisterTest {
     Path configFile = tempDirectory.resolve("robot-config.json");
     Path cacheFile = tempDirectory.resolve("config-cache.json");
     Path watchFile = tempDirectory.resolve("elastic-layout.json");
-    Files.copy(DEPLOY_CONFIG, configFile);
+    Files.copy(TEST_CONFIG, configFile);
     Files.writeString(watchFile, "{\"version\":1}");
     watchFile.toFile().setLastModified(System.currentTimeMillis() - 60_000);
 
@@ -145,7 +145,8 @@ class Step9TemplatesAndDynamicRegisterTest {
 
       assertTrue(manager.getDocument().hasPath(pidPath));
       assertTrue(manager.getDocument().getNode(pidPath) instanceof PIDControllerNode);
-      assertEquals("", create.getEntry(ConfigCreatePanel.NAME_ENTRY).getString("x"));
+      // clearForm unpublishes Name so Elastic can own it again; missing topic reads as "".
+      assertEquals("", create.getEntry(ConfigCreatePanel.NAME_ENTRY).getString(""));
       assertFalse(create.getEntry(ConfigCreatePanel.GO_ENTRY).getBoolean(true));
       assertTrue(Files.exists(cacheFile));
     } finally {
@@ -158,7 +159,7 @@ class Step9TemplatesAndDynamicRegisterTest {
     Path configFile = tempDirectory.resolve("robot-config.json");
     Path cacheFile = tempDirectory.resolve("config-cache.json");
     Path watchFile = tempDirectory.resolve("elastic-layout.json");
-    Files.copy(DEPLOY_CONFIG, configFile);
+    Files.copy(TEST_CONFIG, configFile);
     Files.writeString(watchFile, "{\"version\":1}");
     watchFile.toFile().setLastModified(System.currentTimeMillis() - 60_000);
 
@@ -189,7 +190,7 @@ class Step9TemplatesAndDynamicRegisterTest {
     Path configFile = tempDirectory.resolve("robot-config.json");
     Path cacheFile = tempDirectory.resolve("config-cache.json");
     Path watchFile = tempDirectory.resolve("elastic-layout.json");
-    Files.copy(DEPLOY_CONFIG, configFile);
+    Files.copy(TEST_CONFIG, configFile);
     Files.writeString(watchFile, "{\"version\":1}");
     watchFile.toFile().setLastModified(System.currentTimeMillis() - 60_000);
 

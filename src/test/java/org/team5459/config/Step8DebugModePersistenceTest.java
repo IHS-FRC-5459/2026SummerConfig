@@ -103,6 +103,8 @@ class Step8DebugModePersistenceTest {
                   + debugModeEntry().getBoolean(true));
 
       ((DoubleNode) manager.getDocument().getNode("Arm/PIDController/p")).setValue(0.55);
+      // Promote pulls NT → document; push the live doc so the pull keeps 0.55.
+      TypedNetworkTableSync.publish(manager.getDocument());
       manager.promote();
 
       ConfigDocument committed = TypedConfigLoader.load(configFile.toFile());
@@ -111,6 +113,7 @@ class Step8DebugModePersistenceTest {
       Files.writeString(watchFile, "{\"version\":1,\"changed\":true}");
       watchFile.toFile().setLastModified(System.currentTimeMillis() + 1000);
       ((DoubleNode) manager.getDocument().getNode("Arm/PIDController/p")).setValue(0.66);
+      TypedNetworkTableSync.publish(manager.getDocument());
 
       Thread.sleep(550);
       manager.periodic();

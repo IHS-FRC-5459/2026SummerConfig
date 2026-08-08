@@ -14,11 +14,11 @@ import org.team5459.config.types.PIDControllerNode;
 
 /** Unit tests for Create-panel default node creation. */
 class Step11ConfigCreateHelperTest {
-  private static final Path DEPLOY_CONFIG = Path.of("src/main/deploy/robot-config.json");
+  private static final Path TEST_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   @Test
   void createBuildsDoubleAndPidDefaults() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertTrue(ConfigCreateHelper.create(document, "Double", "Intake/newDouble"));
     assertTrue(document.getNode("Intake/newDouble") instanceof DoubleNode);
     assertEquals(0.0, document.getDouble("Intake/newDouble"), 1e-9);
@@ -31,7 +31,7 @@ class Step11ConfigCreateHelperTest {
 
   @Test
   void createRejectsExistingAndReservedPaths() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertFalse(ConfigCreateHelper.create(document, "Double", "Arm/operatorOffset"));
     assertFalse(ConfigCreateHelper.create(document, "Double", "Save"));
     assertFalse(ConfigCreateHelper.create(document, "Double", ""));
@@ -48,7 +48,7 @@ class Step11ConfigCreateHelperTest {
 
   @Test
   void listCreatableFoldersIncludesNested() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertTrue(ConfigCreateHelper.create(document, ConfigCreateHelper.FOLDER_TYPE, "NestRoot"));
     assertTrue(
         ConfigCreateHelper.create(document, ConfigCreateHelper.FOLDER_TYPE, "NestRoot/Inner"));
@@ -61,7 +61,7 @@ class Step11ConfigCreateHelperTest {
 
   @Test
   void createEmptyFolder() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertTrue(ConfigCreateHelper.create(document, ConfigCreateHelper.FOLDER_TYPE, "Intake"));
     assertTrue(document.getNode("Intake") instanceof FolderNode);
     assertTrue(ConfigCreateHelper.create(document, ConfigCreateHelper.FOLDER_TYPE, "Arm/Inner"));

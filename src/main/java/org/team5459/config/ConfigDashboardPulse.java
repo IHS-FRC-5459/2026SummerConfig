@@ -2,14 +2,13 @@ package org.team5459.config;
 
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.NetworkTableType;
 
 /**
  * Momentary dashboard boolean (Elastic Toggle Button / Switch).
  *
- * <p>Matches the working {@link ConfigDebugMode} pattern: the robot publishes a typed {@code
- * boolean} with {@link NetworkTableEntry#setBoolean(boolean)}. Elastic then sees the topic as
- * already published, skips {@code publishTopic} (which throws on its unmodifiable map), and only
- * calls {@code updateDataFromTopic} — so presses reach the robot.
+ * <p>The robot publishes a typed {@code boolean} with {@link NetworkTableEntry#setBoolean(boolean)}
+ * so Elastic skips {@code publishTopic} and only calls {@code updateDataFromTopic}.
  *
  * <p>Do <strong>not</strong> subscribe-only first: that creates {@code kUnassigned} topics that
  * block Elastic publishes while never carrying a boolean value.
@@ -25,7 +24,6 @@ final class ConfigDashboardPulse {
 
   ConfigDashboardPulse(String fullTopicName, String label) {
     this.label = label;
-    // fullTopicName like "/Config/Save" or "/Config/Create/Go"
     String path = fullTopicName.startsWith("/") ? fullTopicName.substring(1) : fullTopicName;
     String[] parts = path.split("/");
     var table = NetworkTableInstance.getDefault().getTable(parts[0]);
@@ -33,9 +31,7 @@ final class ConfigDashboardPulse {
       table = table.getSubTable(parts[i]);
     }
     this.entry = table.getEntry(parts[parts.length - 1]);
-    // Publish a real boolean so Elastic can updateDataFromTopic without publishTopic.
-    this.entry.setBoolean(false);
-    this.lastValue = this.entry.getBoolean(false);
+    ensureTypedBoolean();
     System.out.println(
         "[Config][Pulse] publish-typed "
             + label
@@ -51,6 +47,28 @@ final class ConfigDashboardPulse {
     return label;
   }
 
+  /** Re-publish as a typed boolean if the topic was left kUnassigned or unpublished. */
+  void ensureTypedBoolean() {
+    NetworkTableType before = entry.getType();
+    boolean value = before == NetworkTableType.kBoolean ? entry.getBoolean(false) : false;
+    entry.setBoolean(value);
+    lastValue = entry.getBoolean(false);
+    NetworkTableType after = entry.getType();
+    if (before != after || after != NetworkTableType.kBoolean) {
+      System.out.println(
+          "[Config][Pulse] ensureTypedBoolean "
+              + label
+              + " before="
+              + before
+              + " after="
+              + after
+              + " val="
+              + lastValue
+              + " exists="
+              + entry.exists());
+    }
+  }
+
   boolean currentValue() {
     return entry.getBoolean(false);
   }
@@ -63,6 +81,17 @@ final class ConfigDashboardPulse {
    * @return {@code true} once when the dashboard value rises to {@code true}
    */
   boolean pollRisingEdge() {
+    if (entry.getType() != NetworkTableType.kBoolean) {
+      System.out.println(
+          "[Config][Pulse] "
+              + label
+              + " not kBoolean (type="
+              + entry.getType()
+              + " exists="
+              + entry.exists()
+              + ") — re-publishing typed boolean");
+      ensureTypedBoolean();
+    }
     boolean value = entry.getBoolean(false);
 
     if (value != lastValue) {
@@ -83,6 +112,13 @@ final class ConfigDashboardPulse {
     if (rising) {
       System.out.println("[Config][Pulse] " + label + " RISING EDGE — handling press");
       entry.setBoolean(false);
+      boolean cleared = entry.getBoolean(false);
+      if (cleared) {
+        System.out.println(
+            "[Config][Pulse] "
+                + label
+                + " WARNING: still true after clear (Elastic may be winning publish fight)");
+      }
       lastValue = false;
       return true;
     }

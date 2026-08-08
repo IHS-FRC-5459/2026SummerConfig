@@ -12,11 +12,11 @@ import org.team5459.config.types.FolderNode;
 
 /** Unit tests for debug Delete-panel path listing and removal. */
 class Step12ConfigDeleteHelperTest {
-  private static final Path DEPLOY_CONFIG = Path.of("src/main/deploy/robot-config.json");
+  private static final Path TEST_CONFIG = Path.of("src/test/resources/robot-config.json");
 
   @Test
   void listIncludesNestedLeavesAndFolders() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     List<String> paths = ConfigDeleteHelper.listDeletablePaths(document);
     assertTrue(paths.contains("Arm"));
     assertTrue(paths.contains("Arm/operatorOffset"));
@@ -28,7 +28,7 @@ class Step12ConfigDeleteHelperTest {
 
   @Test
   void deleteLeafRemovesOnlyThatPath() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertTrue(ConfigDeleteHelper.delete(document, "Arm/operatorOffset"));
     assertNull(document.getNodeQuiet("Arm/operatorOffset"));
     assertTrue(document.getNodeQuiet("Arm") instanceof FolderNode);
@@ -37,7 +37,7 @@ class Step12ConfigDeleteHelperTest {
 
   @Test
   void deleteRejectsCompositeChildren() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertFalse(ConfigDeleteHelper.delete(document, "Arm/PIDController/p"));
     assertTrue(document.getNodeQuiet("Arm/PIDController/p") instanceof DoubleNode);
     assertTrue(ConfigDeleteHelper.delete(document, "Arm/PIDController"));
@@ -46,7 +46,7 @@ class Step12ConfigDeleteHelperTest {
 
   @Test
   void deleteFolderRemovesChildren() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertTrue(ConfigDeleteHelper.delete(document, "Arm"));
     assertNull(document.getNodeQuiet("Arm"));
     assertNull(document.getNodeQuiet("Arm/operatorOffset"));
@@ -56,7 +56,7 @@ class Step12ConfigDeleteHelperTest {
 
   @Test
   void deleteRejectsNoneAndMissing() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertFalse(ConfigDeleteHelper.delete(document, ConfigDeleteHelper.NONE_OPTION));
     assertFalse(ConfigDeleteHelper.delete(document, "DoesNotExist"));
     assertFalse(ConfigDeleteHelper.delete(document, "Save"));
@@ -64,7 +64,7 @@ class Step12ConfigDeleteHelperTest {
 
   @Test
   void removePathApiWorks() {
-    ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
+    ConfigDocument document = TypedConfigLoader.load(TEST_CONFIG.toFile());
     assertTrue(document.removePath("Elevator/myBool"));
     assertFalse(document.hasPath("Elevator/myBool"));
     assertTrue(document.hasPath("Elevator/PIDController"));
