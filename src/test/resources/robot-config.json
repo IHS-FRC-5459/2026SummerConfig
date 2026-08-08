@@ -34,7 +34,11 @@
       },
       "Setpoints": {
         "type": "double[]",
-        "value": [0.0, 20.0, 45.0]
+        "value": [
+          0.0,
+          20.0,
+          45.0
+        ]
       },
       "operatorOffset": {
         "type": "double",

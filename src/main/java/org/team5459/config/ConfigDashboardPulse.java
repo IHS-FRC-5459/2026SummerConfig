@@ -1,22 +1,31 @@
 package org.team5459.config;
 
 import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.NetworkTableListener;
 import edu.wpi.first.networktables.NetworkTableType;
+import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Momentary dashboard boolean (Elastic Toggle Button / Switch).
  *
  * <p>The robot publishes a typed {@code boolean} with {@link NetworkTableEntry#setBoolean(boolean)}
- * so Elastic skips {@code publishTopic} and only calls {@code updateDataFromTopic}.
+ * so Elastic can write via {@code updateDataFromTopic}.
  *
- * <p>Do <strong>not</strong> subscribe-only first: that creates {@code kUnassigned} topics that
- * block Elastic publishes while never carrying a boolean value.
+ * <p>Toggle Button clicks can be shorter than one robot period (unlike sticky Toggle Switch). A
+ * NetworkTables value listener latches remote/local {@code true} so brief presses are not missed by
+ * rising-edge polling alone.
  */
-final class ConfigDashboardPulse {
+final class ConfigDashboardPulse implements AutoCloseable {
   private final String label;
   private final NetworkTableEntry entry;
+  private final NetworkTableListener valueListener;
+  private final AtomicBoolean latchedTrue = new AtomicBoolean(false);
+  private final AtomicBoolean suppressingClear = new AtomicBoolean(false);
   private boolean lastValue;
+  private long lastSeenChange;
 
   ConfigDashboardPulse(String fullTopicName) {
     this(fullTopicName, fullTopicName);
@@ -32,6 +41,29 @@ final class ConfigDashboardPulse {
     }
     this.entry = table.getEntry(parts[parts.length - 1]);
     ensureTypedBoolean();
+    this.lastSeenChange = entry.getLastChange();
+    this.valueListener =
+        NetworkTableListener.createListener(
+            entry,
+            EnumSet.of(
+                NetworkTableEvent.Kind.kValueRemote, NetworkTableEvent.Kind.kValueLocal),
+            event -> {
+              if (suppressingClear.get()
+                  || event.valueData == null
+                  || event.valueData.value == null) {
+                return;
+              }
+              if (event.valueData.value.getBoolean()) {
+                latchedTrue.set(true);
+                System.out.println(
+                    "[Config][Pulse] "
+                        + label
+                        + " latched TRUE ("
+                        + event.is(NetworkTableEvent.Kind.kValueRemote)
+                        + " remote) lastChange="
+                        + entry.getLastChange());
+              }
+            });
     System.out.println(
         "[Config][Pulse] publish-typed "
             + label
@@ -40,7 +72,9 @@ final class ConfigDashboardPulse {
             + " exists="
             + entry.exists()
             + " type="
-            + entry.getType());
+            + entry.getType()
+            + " lastChange="
+            + lastSeenChange);
   }
 
   String label() {
@@ -78,7 +112,7 @@ final class ConfigDashboardPulse {
   }
 
   /**
-   * @return {@code true} once when the dashboard value rises to {@code true}
+   * @return {@code true} once when a dashboard press is detected
    */
   boolean pollRisingEdge() {
     if (entry.getType() != NetworkTableType.kBoolean) {
@@ -92,43 +126,72 @@ final class ConfigDashboardPulse {
               + ") — re-publishing typed boolean");
       ensureTypedBoolean();
     }
+
+    NetworkTableInstance.getDefault().waitForListenerQueue(0.0);
+
+    boolean pressed = latchedTrue.getAndSet(false);
     boolean value = entry.getBoolean(false);
+    long change = entry.getLastChange();
+
+    if (change != lastSeenChange) {
+      System.out.println(
+          "[Config][Pulse] "
+              + label
+              + " lastChange "
+              + lastSeenChange
+              + " -> "
+              + change
+              + " val="
+              + value
+              + " type="
+              + entry.getType());
+      lastSeenChange = change;
+    }
 
     if (value != lastValue) {
       System.out.println(
           "[Config][Pulse] "
               + label
-              + " changed "
+              + " level "
               + lastValue
               + " -> "
               + value
-              + " exists="
-              + entry.exists()
               + " type="
               + entry.getType());
     }
 
-    boolean rising = value && !lastValue;
-    if (rising) {
-      System.out.println("[Config][Pulse] " + label + " RISING EDGE — handling press");
-      entry.setBoolean(false);
-      boolean cleared = entry.getBoolean(false);
-      if (cleared) {
-        System.out.println(
-            "[Config][Pulse] "
-                + label
-                + " WARNING: still true after clear (Elastic may be winning publish fight)");
+    if (value && !lastValue) {
+      pressed = true;
+    }
+
+    if (pressed) {
+      System.out.println("[Config][Pulse] " + label + " PRESS — handling");
+      suppressingClear.set(true);
+      try {
+        entry.setBoolean(false);
+      } finally {
+        suppressingClear.set(false);
       }
       lastValue = false;
+      lastSeenChange = entry.getLastChange();
+      latchedTrue.set(false);
       return true;
     }
+
     lastValue = value;
     return false;
   }
 
   void clearToFalse() {
-    entry.setBoolean(false);
+    suppressingClear.set(true);
+    try {
+      entry.setBoolean(false);
+    } finally {
+      suppressingClear.set(false);
+    }
     lastValue = false;
+    latchedTrue.set(false);
+    lastSeenChange = entry.getLastChange();
   }
 
   String statusLine() {
@@ -141,10 +204,16 @@ final class ConfigDashboardPulse {
         + entry.exists()
         + " type="
         + entry.getType()
+        + " lastChange="
+        + entry.getLastChange()
+        + " latched="
+        + latchedTrue.get()
         + "}";
   }
 
-  void close() {
+  @Override
+  public void close() {
     clearToFalse();
+    valueListener.close();
   }
 }

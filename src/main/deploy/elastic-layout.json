@@ -30,8 +30,7 @@
             "properties": {
               "topic": "/Config/Save",
               "period": 0.06,
-              "data_type": "boolean",
-              "value": false
+              "data_type": "boolean"
             }
           }
         ]
@@ -102,8 +101,7 @@
                 "properties": {
                   "topic": "/Config/Create/Go",
                   "period": 0.06,
-                  "data_type": "boolean",
-                  "value": false
+                  "data_type": "boolean"
                 }
               }
             ]
@@ -150,8 +148,7 @@
                 "properties": {
                   "topic": "/Config/Delete/Go",
                   "period": 0.06,
-                  "data_type": "boolean",
-                  "value": false
+                  "data_type": "boolean"
                 }
               }
             ]
