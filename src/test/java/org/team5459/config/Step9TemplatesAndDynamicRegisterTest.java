@@ -25,21 +25,12 @@ class Step9TemplatesAndDynamicRegisterTest {
   }
 
   @Test
-  void deployConfigIncludesCuratedTemplatesFolder() {
+  void deployConfigHasArmAndElevatorFolders() {
     ConfigDocument document = TypedConfigLoader.load(DEPLOY_CONFIG.toFile());
-    assertNotNull(document.getNode("templates"));
-    assertTrue(document.hasPath("templates/templateDouble"));
-    assertTrue(document.hasPath("templates/templateInt"));
-    assertTrue(document.hasPath("templates/templateBoolean"));
-    assertTrue(document.hasPath("templates/templateString"));
-    assertTrue(document.hasPath("templates/templatePIDController"));
-    assertTrue(document.hasPath("templates/templateRotation2d"));
-    assertTrue(document.hasPath("templates/templatePose2d"));
-    assertTrue(document.hasPath("templates/templateTranslation2d"));
-    assertTrue(document.hasPath("templates/templateSimpleMotorFeedforward"));
-    assertTrue(document.hasPath("templates/templateArmFeedforward"));
-    assertTrue(document.hasPath("templates/templateElevatorFeedforward"));
-    assertTrue(document.getNode("templates/templatePIDController") instanceof PIDControllerNode);
+    assertNotNull(document.getNode("Arm"));
+    assertNotNull(document.getNode("Elevator"));
+    assertTrue(document.getNode("Arm/PIDController") instanceof PIDControllerNode);
+    assertFalse(document.hasPath("templates"));
   }
 
   @Test
@@ -142,16 +133,19 @@ class Step9TemplatesAndDynamicRegisterTest {
     ConfigManager manager =
         new ConfigManager(configFile.toFile(), cacheFile.toFile(), watchFile.toFile());
     try {
-      String pidPath = "Intake/createdPid_" + System.nanoTime();
+      String name = "createdPid_" + System.nanoTime();
+      String pidPath = "Arm/" + name;
       var create =
           NetworkTableInstance.getDefault()
               .getTable(ConfigCreatePanel.TABLE)
               .getSubTable(ConfigCreatePanel.SUBTABLE);
-      pulseCreate(create, "PIDController", pidPath);
+      pulseCreate(create, "PIDController", "Arm", name);
+      manager.periodic();
+      NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
 
       assertTrue(manager.getDocument().hasPath(pidPath));
       assertTrue(manager.getDocument().getNode(pidPath) instanceof PIDControllerNode);
-      assertEquals("", create.getEntry(ConfigCreatePanel.PATH_ENTRY).getString("x"));
+      assertEquals("", create.getEntry(ConfigCreatePanel.NAME_ENTRY).getString("x"));
       assertFalse(create.getEntry(ConfigCreatePanel.GO_ENTRY).getBoolean(true));
       assertTrue(Files.exists(cacheFile));
     } finally {
@@ -173,12 +167,15 @@ class Step9TemplatesAndDynamicRegisterTest {
     ConfigManager manager =
         new ConfigManager(configFile.toFile(), cacheFile.toFile(), watchFile.toFile());
     try {
-      String path = "Intake/roller_" + System.nanoTime();
+      String name = "roller_" + System.nanoTime();
+      String path = "Arm/" + name;
       var create =
           NetworkTableInstance.getDefault()
               .getTable(ConfigCreatePanel.TABLE)
               .getSubTable(ConfigCreatePanel.SUBTABLE);
-      pulseCreate(create, "Double", path);
+      pulseCreate(create, "Double", "Arm", name);
+      manager.periodic();
+      NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
 
       assertTrue(manager.getDocument().hasPath(path), "Expected created /Config/" + path);
       assertEquals(0.0, manager.getDocument().getDouble(path), 1e-9);
@@ -188,8 +185,7 @@ class Step9TemplatesAndDynamicRegisterTest {
   }
 
   @Test
-  void createPanelRejectsExistingPathWithoutClearingPath(@TempDir Path tempDirectory)
-      throws Exception {
+  void createPanelRejectsExistingWithoutClearingName(@TempDir Path tempDirectory) throws Exception {
     Path configFile = tempDirectory.resolve("robot-config.json");
     Path cacheFile = tempDirectory.resolve("config-cache.json");
     Path watchFile = tempDirectory.resolve("elastic-layout.json");
@@ -206,24 +202,52 @@ class Step9TemplatesAndDynamicRegisterTest {
           NetworkTableInstance.getDefault()
               .getTable(ConfigCreatePanel.TABLE)
               .getSubTable(ConfigCreatePanel.SUBTABLE);
-      pulseCreate(create, "Double", "Arm/operatorOffset");
+      pulseCreate(create, "Double", "Arm", "operatorOffset");
+      manager.periodic();
+      NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
 
-      assertEquals(
-          "Arm/operatorOffset", create.getEntry(ConfigCreatePanel.PATH_ENTRY).getString(""));
+      assertEquals("operatorOffset", create.getEntry(ConfigCreatePanel.NAME_ENTRY).getString(""));
       assertFalse(create.getEntry(ConfigCreatePanel.GO_ENTRY).getBoolean(true));
     } finally {
       manager.close();
     }
   }
 
+  @Test
+  void saveButtonPollClearsSaveEntry() {
+    var saveEntry = NetworkTableInstance.getDefault().getTable("Config").getEntry("Save");
+    boolean[] ran = {false};
+    try (ConfigSaveButton saveButton =
+        new ConfigSaveButton("Config", "Save", () -> ran[0] = true)) {
+      saveEntry.setBoolean(true);
+      NetworkTableInstance.getDefault().flush();
+
+      assertTrue(saveButton.poll());
+      assertTrue(ran[0]);
+      assertFalse(saveEntry.getBoolean(true));
+
+      // Same sticky true (no new NT write) must not re-fire.
+      ran[0] = false;
+      assertFalse(saveButton.poll());
+      assertFalse(ran[0]);
+
+      // A fresh dashboard write of true must fire again.
+      saveEntry.setBoolean(true);
+      NetworkTableInstance.getDefault().flush();
+      assertTrue(saveButton.poll());
+      assertTrue(ran[0]);
+    }
+  }
+
   private static void pulseCreate(
-      edu.wpi.first.networktables.NetworkTable create, String type, String path) {
+      edu.wpi.first.networktables.NetworkTable create, String type, String folder, String name) {
     create.getEntry(ConfigCreatePanel.GO_ENTRY).setBoolean(false);
     NetworkTableInstance.getDefault().flush();
     NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
 
     create.getSubTable(ConfigCreatePanel.TYPE_SUBTABLE).getEntry("selected").setString(type);
-    create.getEntry(ConfigCreatePanel.PATH_ENTRY).setString(path);
+    create.getSubTable(ConfigCreatePanel.FOLDER_SUBTABLE).getEntry("selected").setString(folder);
+    create.getEntry(ConfigCreatePanel.NAME_ENTRY).setString(name);
     NetworkTableInstance.getDefault().flush();
     NetworkTableInstance.getDefault().waitForListenerQueue(0.5);
 

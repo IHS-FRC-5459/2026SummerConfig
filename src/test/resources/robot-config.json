@@ -16,6 +16,10 @@
           "d": {
             "type": "double",
             "value": 0.001
+          },
+          "setpoint": {
+            "type": "double",
+            "value": 0.0
           }
         }
       },
@@ -55,6 +59,10 @@
           "d": {
             "type": "double",
             "value": 0.002
+          },
+          "setpoint": {
+            "type": "double",
+            "value": 0.0
           }
         }
       }

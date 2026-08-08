@@ -8,20 +8,6 @@
         "layouts": [],
         "containers": [
           {
-            "title": "operatorOffset",
-            "x": 512.0,
-            "y": 512.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/Config/Arm/operatorOffset",
-              "period": 0.06,
-              "data_type": "double",
-              "show_submit_button": false
-            }
-          },
-          {
             "title": "DebugMode",
             "x": 512.0,
             "y": 256.0,
@@ -40,11 +26,12 @@
             "y": 256.0,
             "width": 128.0,
             "height": 128.0,
-            "type": "Toggle Switch",
+            "type": "Toggle Button",
             "properties": {
               "topic": "/Config/Save",
               "period": 0.06,
-              "data_type": "boolean"
+              "data_type": "boolean",
+              "value": false
             }
           },
           {
@@ -58,6 +45,7 @@
               "topic": "/Config/Arm/PIDController/p",
               "period": 0.06,
               "data_type": "double",
+              "value": 0.7,
               "show_submit_button": false
             }
           }
@@ -80,6 +68,7 @@
               "topic": "/Config/Arm/PIDController/d",
               "period": 0.06,
               "data_type": "double",
+              "value": 0.01,
               "show_submit_button": false
             }
           },
@@ -94,6 +83,7 @@
               "topic": "/Config/Arm/PIDController/i",
               "period": 0.06,
               "data_type": "double",
+              "value": 0.03,
               "show_submit_button": false
             }
           },
@@ -108,6 +98,7 @@
               "topic": "/Config/Arm/operatorOffset",
               "period": 0.06,
               "data_type": "double",
+              "value": 112.0,
               "show_submit_button": false
             }
           }
@@ -119,21 +110,34 @@
       "grid_layout": {
         "layouts": [
           {
-            "title": "Create Config Entry",
-            "x": 256.0,
-            "y": 256.0,
-            "width": 384.0,
-            "height": 512.0,
+            "title": "Create",
+            "x": 384.0,
+            "y": 0.0,
+            "width": 896.0,
+            "height": 640.0,
             "type": "List Layout",
             "properties": {
               "label_position": "TOP"
             },
             "children": [
               {
+                "title": "Folder",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "ComboBox Chooser",
+                "properties": {
+                  "topic": "/Config/Create/Folder",
+                  "period": 0.06,
+                  "sort_options": false
+                }
+              },
+              {
                 "title": "Type",
                 "x": 0.0,
                 "y": 0.0,
-                "width": 256.0,
+                "width": 128.0,
                 "height": 128.0,
                 "type": "ComboBox Chooser",
                 "properties": {
@@ -143,14 +147,14 @@
                 }
               },
               {
-                "title": "Path",
+                "title": "Name",
                 "x": 0.0,
                 "y": 0.0,
-                "width": 256.0,
+                "width": 128.0,
                 "height": 128.0,
                 "type": "Text Display",
                 "properties": {
-                  "topic": "/Config/Create/Path",
+                  "topic": "/Config/Create/Name",
                   "period": 0.06,
                   "data_type": "string",
                   "show_submit_button": true
@@ -162,11 +166,60 @@
                 "y": 0.0,
                 "width": 128.0,
                 "height": 128.0,
-                "type": "Toggle Switch",
+                "type": "Toggle Button",
                 "properties": {
                   "topic": "/Config/Create/Go",
                   "period": 0.06,
-                  "data_type": "boolean"
+                  "data_type": "boolean",
+                  "value": false
+                }
+              }
+            ]
+          }
+        ],
+        "containers": []
+      }
+    },
+    {
+      "name": "Delete",
+      "grid_layout": {
+        "layouts": [
+          {
+            "title": "Delete",
+            "x": 384.0,
+            "y": 0.0,
+            "width": 896.0,
+            "height": 384.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "TOP"
+            },
+            "children": [
+              {
+                "title": "Path",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "ComboBox Chooser",
+                "properties": {
+                  "topic": "/Config/Delete/Path",
+                  "period": 0.06,
+                  "sort_options": false
+                }
+              },
+              {
+                "title": "Go",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Toggle Button",
+                "properties": {
+                  "topic": "/Config/Delete/Go",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "value": false
                 }
               }
             ]

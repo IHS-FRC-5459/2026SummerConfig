@@ -10,12 +10,19 @@ Robot settings live in `src/main/deploy/robot-config.json`. `ConfigManager` publ
 ## Creating constants (all supported)
 
 1. **JSON / code** — add entries to `robot-config.json` (typed schema) and deploy.
-2. **Create panel** (debug) — place Elastic widgets for:
-   - ComboBox Chooser → `/Config/Create/Type`
-   - Text Display → `/Config/Create/Path` (e.g. `Intake/ArmPID`)
-   - Toggle Switch → `/Config/Create/Go`
-   Pick a type, enter a path, flip Go. The robot clones the matching `templates/template*` entry, autosaves the cache, then clears Path / resets type / sets Go false.
-3. **Elastic Custom** — create a scalar, rebind topic to `/Config/...` (debug auto-register). Templates remain published for defaults/cloning.
+2. **Create panel** (debug) — on the Create tab:
+   - Type chooser → `/Config/Create/Type` (Folder plus scalars/composites)
+   - Folder chooser → `/Config/Create/Folder` (`(root)` or any folder path, including nested like `Claw/Intake`)
+   - Name text → `/Config/Create/Name`
+   - Go Toggle Switch → `/Config/Create/Go` (flips on to create; robot clears it)
+   Flip Go to insert a zero/empty default of that type (or an empty folder).
+3. **Delete panel** (debug) — on the Delete tab:
+   - Path chooser → `/Config/Delete/Path` (any constant or folder; `(none)` = no-op)
+   - Go Toggle Switch → `/Config/Delete/Go`
+   Flip Go to remove the path from the live document / `config-cache.json`. Deleting a folder removes all children. Press **Save** to promote into `robot-config.json`.
+4. **Elastic Custom** — create a scalar, rebind topic to `/Config/...` (debug auto-register).
+
+Elastic does **not** auto-reload `elastic-layout.json` — re-import/open that layout after Create/Delete UI changes.
 
 Sim cache writes go to the deploy directory returned by `Filesystem.getDeployDirectory()` (often under `build/...`), not necessarily `src/main/deploy`. Check the `[Config] Saved config cache:` log line for the absolute path.
 

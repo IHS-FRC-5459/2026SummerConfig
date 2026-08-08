@@ -10,7 +10,8 @@ import org.team5459.config.ConfigFieldReader;
 import org.team5459.config.ConfigNode;
 
 /**
- * Live {@link PIDController} backed by typed {@code p}, {@code i}, and {@code d} child fields.
+ * Live {@link PIDController} backed by typed {@code p}, {@code i}, {@code d}, and {@code setpoint}
+ * child fields.
  *
  * <p>Unlike {@link ValueConfigNode} types, this node keeps one mutable controller instance for the
  * lifetime of the document. {@link #getController()} always returns that same object, which makes
@@ -32,11 +33,16 @@ public final class PIDControllerNode extends CompositeConfigNode {
 
   @Override
   protected void syncValue() {
+    ensureDoubleField("p", 0.0);
+    ensureDoubleField("i", 0.0);
+    ensureDoubleField("d", 0.0);
+    ensureDoubleField("setpoint", 0.0);
     ConfigFieldReader fieldReader = reader("PIDController");
     controller.setPID(
         fieldReader.readDouble("p", 0.0),
         fieldReader.readDouble("i", 0.0),
         fieldReader.readDouble("d", 0.0));
+    controller.setSetpoint(fieldReader.readDouble("setpoint", 0.0));
   }
 
   /** Re-applies the current field values to the live controller. */

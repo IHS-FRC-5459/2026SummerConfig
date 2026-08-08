@@ -35,7 +35,8 @@ public final class ConfigDynamicRegistrar implements AutoCloseable {
       Set.of(
           ConfigSaveButton.kDefaultEntryName.toLowerCase(Locale.ROOT),
           ConfigDebugMode.kDefaultEntryName.toLowerCase(Locale.ROOT),
-          ConfigCreatePanel.SUBTABLE.toLowerCase(Locale.ROOT));
+          ConfigCreatePanel.SUBTABLE.toLowerCase(Locale.ROOT),
+          ConfigDeletePanel.SUBTABLE.toLowerCase(Locale.ROOT));
   private static final Set<String> PID_FIELDS = Set.of("p", "i", "d", "setpoint");
 
   private final ConfigDocument document;
@@ -112,7 +113,10 @@ public final class ConfigDynamicRegistrar implements AutoCloseable {
     }
 
     String relativePath = toRelativePath(topicName);
-    if (relativePath == null || isReserved(relativePath) || isUnderTemplates(relativePath)) {
+    if (relativePath == null || isReserved(relativePath)) {
+      return false;
+    }
+    if (ConfigDeletedPaths.isSuppressed(relativePath)) {
       return false;
     }
 
@@ -230,9 +234,8 @@ public final class ConfigDynamicRegistrar implements AutoCloseable {
     fields.put("p", new DoubleNode(readDouble(parent + "/p", 0.0)));
     fields.put("i", new DoubleNode(readDouble(parent + "/i", 0.0)));
     fields.put("d", new DoubleNode(readDouble(parent + "/d", 0.0)));
-    PIDControllerNode pid = new PIDControllerNode(fields);
-    pid.getController().setSetpoint(readDouble(parent + "/setpoint", 0.0));
-    return pid;
+    fields.put("setpoint", new DoubleNode(readDouble(parent + "/setpoint", 0.0)));
+    return new PIDControllerNode(fields);
   }
 
   private static double readDouble(String relativePath, double defaultValue) {
@@ -321,10 +324,6 @@ public final class ConfigDynamicRegistrar implements AutoCloseable {
   private static String leafName(String relativePath) {
     int slash = relativePath.lastIndexOf('/');
     return slash < 0 ? relativePath : relativePath.substring(slash + 1);
-  }
-
-  private static boolean isUnderTemplates(String relativePath) {
-    return relativePath.equals("templates") || relativePath.startsWith("templates/");
   }
 
   private static boolean isReserved(String relativePath) {

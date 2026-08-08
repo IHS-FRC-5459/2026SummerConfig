@@ -28,12 +28,12 @@ import org.team5459.config.types.*;
  * callback runs after each applied edit (typically to save JSON back to disk).
  *
  * <p>Composite and folder nodes themselves are not directly editable over NetworkTables; only their
- * scalar/array descendants are (plus PID {@code setpoint} for Elastic's PID widget).
+ * scalar/array descendants are.
  */
 public final class TypedNetworkTableSync {
 
   private static final EnumSet<NetworkTableEvent.Kind> REMOTE_VALUE_EVENTS =
-      EnumSet.of(NetworkTableEvent.Kind.kValueRemote, NetworkTableEvent.Kind.kValueLocal);
+      EnumSet.of(NetworkTableEvent.Kind.kValueRemote);
 
   private TypedNetworkTableSync() {}
 
@@ -41,6 +41,35 @@ public final class TypedNetworkTableSync {
   public static void publish(ConfigDocument document) {
     NetworkTable table = NetworkTableInstance.getDefault().getTable("Config");
     publishEntries(document.getRootEntries(), table);
+  }
+
+  /**
+   * Unpublishes NetworkTables topics for {@code relativePath} and all nested topics under it (e.g.
+   * after a debug Delete). Stops Elastic/auto-register from seeing stale values.
+   */
+  public static void unpublishPath(String relativePath) {
+    if (relativePath == null || relativePath.isBlank()) {
+      return;
+    }
+    String normalized = relativePath.replace('\\', '/');
+    while (normalized.startsWith("/")) {
+      normalized = normalized.substring(1);
+    }
+    if (normalized.startsWith("Config/")) {
+      normalized = normalized.substring("Config/".length());
+    }
+    if (normalized.isBlank()) {
+      return;
+    }
+
+    NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    String exact = "/Config/" + normalized;
+    String prefix = exact + "/";
+    inst.getEntry(exact).unpublish();
+    for (edu.wpi.first.networktables.Topic topic : inst.getTopics(prefix)) {
+      inst.getEntry(topic.getName()).unpublish();
+    }
+    NetworkTableInstance.getDefault().flush();
   }
 
   /** Creates listeners that apply remote NetworkTables edits to the document. */
@@ -87,14 +116,11 @@ public final class TypedNetworkTableSync {
     }
   }
 
-  /** Publishes {@code .type} (and PID setpoint) so Elastic can bind multi-topic widgets. */
+  /** Publishes {@code .type} so Elastic can bind multi-topic widgets. */
   private static void publishElasticMetadata(CompositeConfigNode composite, NetworkTable subTable) {
     String elasticType = ConfigElasticTypes.elasticTypeFor(composite);
     if (elasticType != null) {
       subTable.getEntry(ConfigElasticTypes.TYPE_TOPIC).setString(elasticType);
-    }
-    if (composite instanceof PIDControllerNode pidNode) {
-      subTable.getEntry("setpoint").setDouble(pidNode.getController().getSetpoint());
     }
   }
 
@@ -122,9 +148,6 @@ public final class TypedNetworkTableSync {
             onUpdate.run();
           };
       listenEntries(composite.getFields(), subTable, afterChildUpdate, listeners);
-      if (composite instanceof PIDControllerNode pidNode) {
-        listeners.add(createPidSetpointListener(subTable.getEntry("setpoint"), pidNode, onUpdate));
-      }
     } else if (node instanceof DoubleNode doubleNode) {
       listeners.add(createDoubleListener(table.getEntry(name), doubleNode, onUpdate));
     } else if (node instanceof IntNode intNode) {
@@ -140,21 +163,6 @@ public final class TypedNetworkTableSync {
     } else {
       ConfigWarnings.warnUnsupportedNetworkTablesType(name, node);
     }
-  }
-
-  private static NetworkTableListener createPidSetpointListener(
-      NetworkTableEntry entry, PIDControllerNode pidNode, Runnable onUpdate) {
-    entry.setDouble(pidNode.getController().getSetpoint());
-    return NetworkTableListener.createListener(
-        entry,
-        REMOTE_VALUE_EVENTS,
-        event -> {
-          if (event.valueData == null) {
-            return;
-          }
-          pidNode.getController().setSetpoint(event.valueData.value.getDouble());
-          onUpdate.run();
-        });
   }
 
   private static NetworkTableListener createDoubleListener(

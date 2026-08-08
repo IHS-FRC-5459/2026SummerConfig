@@ -19,7 +19,7 @@
  *       content changes. New scalars under {@code /Config} auto-register (Elastic Custom + rebind).
  *   <li><b>Match</b> (FMS, or DebugMode off): NT is write-only for display; getters read JSON
  *       defaults; no JSON writes.
- *   <li>Create constants via JSON, {@code /Config/templates/template*} widgets, or Custom+rebind.
+ *   <li>Create constants via JSON, the {@code /Config/Create} panel, or Custom+rebind.
  *   <li>Subsystems read through {@link org.team5459.config.ConfigDocument} typed getters.
  * </ol>
  *

@@ -35,14 +35,7 @@ class Step10ElasticWidgetTypesTest {
             .getTable("Config")
             .getSubTable("Arm")
             .getSubTable("PIDController");
-    var templatePid =
-        NetworkTableInstance.getDefault()
-            .getTable("Config")
-            .getSubTable("templates")
-            .getSubTable("templatePIDController");
-
     assertEquals("PIDController", armPid.getEntry(".type").getString(""));
-    assertEquals("PIDController", templatePid.getEntry(".type").getString(""));
     assertEquals(0.0, armPid.getEntry("setpoint").getDouble(-1.0));
   }
 }

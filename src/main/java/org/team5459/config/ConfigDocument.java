@@ -137,6 +137,42 @@ public final class ConfigDocument {
     return false;
   }
 
+  /**
+   * Removes the node at {@code path}. If it is a folder/composite, children are removed with it.
+   *
+   * @return {@code true} if a node was removed
+   */
+  public boolean removePath(String path) {
+    if (path == null || path.isBlank()) {
+      return false;
+    }
+    String[] parts = path.split("/");
+    if (parts.length == 0) {
+      return false;
+    }
+    Map<String, ConfigNode> current = root;
+    for (int index = 0; index < parts.length - 1; index++) {
+      String part = parts[index];
+      if (part.isBlank()) {
+        return false;
+      }
+      ConfigNode existing = current.get(part);
+      if (existing == null) {
+        return false;
+      }
+      Map<String, ConfigNode> children = existing.getChildEntries();
+      if (children == null) {
+        return false;
+      }
+      current = children;
+    }
+    String leaf = parts[parts.length - 1];
+    if (leaf.isBlank()) {
+      return false;
+    }
+    return current.remove(leaf) != null;
+  }
+
   /** Replaces the entire root tree (used after promote reloads committed JSON). */
   void replaceRoot(Map<String, ConfigNode> newRoot) {
     root.clear();

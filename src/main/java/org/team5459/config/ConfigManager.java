@@ -1,5 +1,6 @@
 package org.team5459.config;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableListener;
 import java.io.File;
 import java.util.ArrayList;
@@ -21,12 +22,12 @@ import java.util.List;
  *       startup.
  * </ul>
  *
- * <h2>Creating constants</h2>
+ * <h2>Creating / deleting constants</h2>
  *
  * <ul>
  *   <li>Edit {@code robot-config.json} (and deploy).
- *   <li>Debug Create panel: {@code /Config/Create/Type} (chooser), {@code Path}, {@code Go} —
- *       clones a template into the live document and clears the form.
+ *   <li>Debug Create panel: type + parent folder + name under {@code /Config/Create}, then Go.
+ *   <li>Debug Delete panel: path under {@code /Config/Delete}, then Go (folders remove children).
  *   <li>Elastic Custom scalar → rebind topic to {@code /Config/...} (debug auto-register).
  * </ul>
  */
@@ -34,17 +35,22 @@ public class ConfigManager {
   private final File configFile;
   private final File cacheFile;
   private final File watchFile;
+  private final String saveTableName;
+  private final String saveEntryName;
   private final ConfigDocument defaultsDocument;
   private final ConfigDocument liveDocument;
   private final ConfigDebugMode debugMode;
   private final ConfigPromoteWatcher promoteWatcher;
 
   private final List<NetworkTableListener> configListeners = new ArrayList<>();
-  private NetworkTableListener saveButtonListener;
+  private ConfigSaveButton saveButton;
   private ConfigDynamicRegistrar dynamicRegistrar;
   private ConfigCreatePanel createPanel;
+  private ConfigDeletePanel deletePanel;
   private boolean debugActive;
   private boolean promoting;
+  private boolean autosaving;
+  private boolean suppressAutosave;
 
   public ConfigManager(File configFile, File cacheFile) {
     this(configFile, cacheFile, sibling(configFile, "elastic-layout.json"));
@@ -64,6 +70,8 @@ public class ConfigManager {
     this.configFile = configFile;
     this.cacheFile = cacheFile;
     this.watchFile = watchFile;
+    this.saveTableName = saveTableName;
+    this.saveEntryName = saveEntryName;
     this.defaultsDocument = TypedConfigLoader.load(configFile);
     this.liveDocument = TypedConfigLoader.load(configFile);
     this.debugMode = new ConfigDebugMode();
@@ -71,9 +79,8 @@ public class ConfigManager {
     this.promoteWatcher.poll();
 
     TypedNetworkTableSync.publish(defaultsDocument);
-    ConfigSaveButton.publish(saveTableName, saveEntryName);
-    this.saveButtonListener =
-        ConfigSaveButton.listen(saveTableName, saveEntryName, this::promoteFromSaveButton);
+    this.saveButton =
+        new ConfigSaveButton(saveTableName, saveEntryName, this::promoteFromSaveButton);
 
     if (debugMode.isDebug()) {
       enableDebug();
@@ -85,6 +92,10 @@ public class ConfigManager {
   }
 
   public void periodic() {
+    if (saveButton != null) {
+      saveButton.poll();
+    }
+
     boolean wantDebug = debugMode.isDebug();
     if (wantDebug != debugActive) {
       if (wantDebug) {
@@ -93,11 +104,39 @@ public class ConfigManager {
         disableDebug();
       }
     }
+
     if (debugActive) {
+      if (createPanel != null) {
+        createPanel.poll();
+      }
+      if (deletePanel != null) {
+        deletePanel.poll();
+      }
       promoteWatcher.poll();
       if (dynamicRegistrar != null) {
         dynamicRegistrar.poll();
       }
+    } else {
+      clearGoIfPulsed(
+          ConfigCreatePanel.TABLE,
+          ConfigCreatePanel.SUBTABLE,
+          ConfigCreatePanel.GO_ENTRY,
+          "Create");
+      clearGoIfPulsed(
+          ConfigDeletePanel.TABLE,
+          ConfigDeletePanel.SUBTABLE,
+          ConfigDeletePanel.GO_ENTRY,
+          "Delete");
+    }
+  }
+
+  private static void clearGoIfPulsed(String table, String sub, String goEntry, String label) {
+    var entry =
+        NetworkTableInstance.getDefault().getTable(table).getSubTable(sub).getEntry(goEntry);
+    if (ConfigCreatePanel.isGoPulsed(entry)) {
+      entry.setBoolean(false);
+      NetworkTableInstance.getDefault().flush();
+      ConfigWarnings.warn(label + " ignored: turn on Config/DebugMode first");
     }
   }
 
@@ -131,8 +170,13 @@ public class ConfigManager {
     }
     promoting = true;
     try {
+      // PIDController Elastic widget only writes NT on "Publish Values"; pull so Save persists
+      // those values (and any listener-missed scalars) instead of stale in-memory defaults.
+      if (dynamicRegistrar != null) {
+        dynamicRegistrar.poll();
+      }
+      TypedNetworkTablePull.pull(liveDocument);
       TypedConfigSaver.save(configFile, liveDocument);
-      // Reload committed file into defaults so newly auto-registered paths appear there too.
       defaultsDocument.replaceRoot(TypedConfigLoader.load(configFile).getRootEntries());
       System.out.println("[Config] Promoted live values to " + configFile.getAbsolutePath());
     } finally {
@@ -142,9 +186,9 @@ public class ConfigManager {
 
   public void close() {
     disableDebugListenersOnly();
-    if (saveButtonListener != null) {
-      saveButtonListener.close();
-      saveButtonListener = null;
+    if (saveButton != null) {
+      saveButton.close();
+      saveButton = null;
     }
   }
 
@@ -157,6 +201,7 @@ public class ConfigManager {
     startConfigListeners();
     startDynamicRegistrar();
     startCreatePanel();
+    startDeletePanel();
     System.out.println(
         "[Config] Debug mode: getters use NetworkTables; autosaving " + cacheFile.getName());
   }
@@ -171,10 +216,17 @@ public class ConfigManager {
 
   private void startConfigListeners() {
     closeConfigValueListeners();
-    NetworkTableListener[] listeners =
-        TypedNetworkTableSync.listen(liveDocument, this::autosaveCache);
-    for (NetworkTableListener listener : listeners) {
-      configListeners.add(listener);
+    // Initial setDouble/setBoolean while attaching listeners fires kValueLocal; ignore those so we
+    // do not recurse into autosave/pull during Create/Delete structure updates.
+    suppressAutosave = true;
+    try {
+      NetworkTableListener[] listeners =
+          TypedNetworkTableSync.listen(liveDocument, this::autosaveCache);
+      for (NetworkTableListener listener : listeners) {
+        configListeners.add(listener);
+      }
+    } finally {
+      suppressAutosave = false;
     }
   }
 
@@ -188,27 +240,50 @@ public class ConfigManager {
     createPanel = new ConfigCreatePanel(liveDocument, this::onDocumentStructureChanged);
   }
 
+  private void startDeletePanel() {
+    closeDeletePanel();
+    deletePanel = new ConfigDeletePanel(liveDocument, this::onDocumentStructureChanged);
+    System.out.println(
+        "[Config] *** Reload Elastic layout from elastic-layout.json to pick up Create/Delete tabs"
+            + " (dashboard does NOT auto-refresh). ***");
+  }
+
   private void onDocumentStructureChanged() {
     if (!debugActive) {
       return;
     }
     TypedNetworkTableSync.publish(liveDocument);
     startConfigListeners();
+    if (createPanel != null) {
+      createPanel.refreshFolderOptions();
+    }
+    if (deletePanel != null) {
+      deletePanel.refreshPathOptions();
+    }
     autosaveCache();
   }
 
   private void autosaveCache() {
-    if (!debugActive) {
+    if (!debugActive || suppressAutosave || autosaving) {
       return;
     }
-    TypedConfigSaver.save(cacheFile, liveDocument);
-    System.out.println("[Config] Saved config cache: " + cacheFile.getAbsolutePath());
+    autosaving = true;
+    try {
+      // Do not pull here: Create/Delete treat the document as source of truth, and listener attach
+      // floods would pull+write on every setDouble. Save/promote pulls NT before writing
+      // robot-config.json.
+      TypedConfigSaver.save(cacheFile, liveDocument);
+      System.out.println("[Config] Saved config cache: " + cacheFile.getAbsolutePath());
+    } finally {
+      autosaving = false;
+    }
   }
 
   private void disableDebugListenersOnly() {
     closeConfigValueListeners();
     closeDynamicRegistrar();
     closeCreatePanel();
+    closeDeletePanel();
   }
 
   private void closeConfigValueListeners() {
@@ -229,6 +304,13 @@ public class ConfigManager {
     if (createPanel != null) {
       createPanel.close();
       createPanel = null;
+    }
+  }
+
+  private void closeDeletePanel() {
+    if (deletePanel != null) {
+      deletePanel.close();
+      deletePanel = null;
     }
   }
 
