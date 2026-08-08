@@ -103,8 +103,15 @@ class Step8DebugModePersistenceTest {
                   + debugModeEntry().getBoolean(true));
 
       ((DoubleNode) manager.getDocument().getNode("Arm/PIDController/p")).setValue(0.55);
-      // Promote pulls NT → document; push the live doc so the pull keeps 0.55.
+      // Drop any suite-leftover publisher on this topic, then republish from the live document.
+      NetworkTableInstance.getDefault()
+          .getTable("Config")
+          .getSubTable("Arm")
+          .getSubTable("PIDController")
+          .getEntry("p")
+          .unpublish();
       TypedNetworkTableSync.publish(manager.getDocument());
+      NetworkTableInstance.getDefault().flush();
       manager.promote();
 
       ConfigDocument committed = TypedConfigLoader.load(configFile.toFile());
@@ -113,7 +120,14 @@ class Step8DebugModePersistenceTest {
       Files.writeString(watchFile, "{\"version\":1,\"changed\":true}");
       watchFile.toFile().setLastModified(System.currentTimeMillis() + 1000);
       ((DoubleNode) manager.getDocument().getNode("Arm/PIDController/p")).setValue(0.66);
+      NetworkTableInstance.getDefault()
+          .getTable("Config")
+          .getSubTable("Arm")
+          .getSubTable("PIDController")
+          .getEntry("p")
+          .unpublish();
       TypedNetworkTableSync.publish(manager.getDocument());
+      NetworkTableInstance.getDefault().flush();
 
       Thread.sleep(550);
       manager.periodic();

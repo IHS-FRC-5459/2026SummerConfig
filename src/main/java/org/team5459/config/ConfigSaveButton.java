@@ -19,10 +19,6 @@ public final class ConfigSaveButton implements AutoCloseable {
     this.pulse = new ConfigDashboardPulse("/" + tableName + "/" + entryName, "Save");
   }
 
-  ConfigDashboardPulse pulse() {
-    return pulse;
-  }
-
   /** Re-assert typed boolean publisher (call when entering debug). */
   public void ensurePublished() {
     pulse.ensureTypedBoolean();
@@ -42,7 +38,6 @@ public final class ConfigSaveButton implements AutoCloseable {
     if (!pulse.pollRisingEdge()) {
       return false;
     }
-    System.out.println("[Config] Save pressed — promoting to robot-config.json");
     if (onSave != null) {
       onSave.run();
     }

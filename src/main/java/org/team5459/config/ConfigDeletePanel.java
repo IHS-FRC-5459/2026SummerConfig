@@ -26,11 +26,6 @@ public final class ConfigDeletePanel implements AutoCloseable {
     publish();
     this.goPulse =
         new ConfigDashboardPulse("/" + TABLE + "/" + SUBTABLE + "/" + GO_ENTRY, "Delete/Go");
-    System.out.println("[Config] Delete panel started");
-  }
-
-  ConfigDashboardPulse goPulse() {
-    return goPulse;
   }
 
   /** Publishes path chooser. */
@@ -61,16 +56,12 @@ public final class ConfigDeletePanel implements AutoCloseable {
     NetworkTable delete = deleteTable();
     String path =
         readChooserSelection(delete.getSubTable(PATH_SUBTABLE), ConfigDeleteHelper.NONE_OPTION);
-    System.out.println("[Config] Delete Go: path='" + path + "'");
     boolean deleted = ConfigDeleteHelper.delete(document, path);
     if (deleted) {
-      System.out.println("[Config] Delete succeeded: " + path);
       refreshPathOptions();
       if (onDeleted != null) {
         onDeleted.run();
       }
-    } else {
-      System.out.println("[Config] Delete no-op / failed: " + path);
     }
   }
 

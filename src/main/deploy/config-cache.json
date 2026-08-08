@@ -1,6 +1,11 @@
 {
   "random" : {
     "type" : "folder",
-    "value" : { }
+    "value" : {
+      "hh" : {
+        "type" : "int",
+        "value" : 0
+      }
+    }
   }
 }
