@@ -55,8 +55,14 @@ public final class ConfigSaveButton {
         EnumSet.of(NetworkTableEvent.Kind.kValueRemote),
         event -> {
           if (event.valueData != null && event.valueData.value.getBoolean()) {
-            TypedConfigSaver.save(configFile, document);
-            System.out.println("Committed config: " + configFile.getAbsolutePath());
+            try {
+              TypedConfigSaver.saveSafely(configFile, document);
+              System.out.println("Committed config: " + configFile.getAbsolutePath());
+            } catch (RuntimeException commitFailure) {
+              System.err.println(
+                  "[Config] Save failed, robot-config.json was not modified: "
+                      + commitFailure.getMessage());
+            }
             saveEntry.setBoolean(false);
           }
         });

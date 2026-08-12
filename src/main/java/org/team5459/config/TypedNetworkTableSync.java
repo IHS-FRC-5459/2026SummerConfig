@@ -5,6 +5,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableListener;
+import edu.wpi.first.wpilibj.DriverStation;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -22,6 +23,11 @@ import org.team5459.config.types.*;
  * scalar leaves. When a dashboard writes a new value, the in-memory node is updated and parent
  * composites call {@link CompositeConfigNode#applyFieldChanges()}. The optional {@code onUpdate}
  * callback runs after each applied edit (typically to save JSON back to disk).
+ *
+ * <p>While FMS is attached, remote edits are rejected outright: the in-memory node is left
+ * unchanged and the NetworkTables entry is reverted back to the node's current value, so a
+ * dashboard cannot influence robot behavior during a match. {@code onUpdate} does not run for a
+ * rejected edit.
  *
  * <p>Composite and folder nodes themselves are not directly editable over NetworkTables; only their
  * scalar/array descendants are.
@@ -118,6 +124,20 @@ public final class TypedNetworkTableSync {
     }
   }
 
+  /**
+   * Returns {@code true} if a remote edit should be rejected because FMS is attached. When
+   * rejecting, runs {@code revert} to push the NetworkTables entry back to the node's actual
+   * current value, so the dashboard widget visibly snaps back instead of showing a value that never
+   * took effect.
+   */
+  private static boolean rejectIfFmsAttached(Runnable revert) {
+    if (DriverStation.isFMSAttached()) {
+      revert.run();
+      return true;
+    }
+    return false;
+  }
+
   private static NetworkTableListener createDoubleListener(
       NetworkTableEntry entry, DoubleNode node, Runnable onUpdate) {
     entry.setDouble(node.getValue());
@@ -126,6 +146,9 @@ public final class TypedNetworkTableSync {
         REMOTE_VALUE_EVENTS,
         event -> {
           if (event.valueData == null) {
+            return;
+          }
+          if (rejectIfFmsAttached(() -> entry.setDouble(node.getValue()))) {
             return;
           }
           node.setValue(event.valueData.value.getDouble());
@@ -143,6 +166,9 @@ public final class TypedNetworkTableSync {
           if (event.valueData == null) {
             return;
           }
+          if (rejectIfFmsAttached(() -> entry.setInteger(node.getValue()))) {
+            return;
+          }
           node.setValue((int) event.valueData.value.getInteger());
           onUpdate.run();
         });
@@ -156,6 +182,9 @@ public final class TypedNetworkTableSync {
         REMOTE_VALUE_EVENTS,
         event -> {
           if (event.valueData == null) {
+            return;
+          }
+          if (rejectIfFmsAttached(() -> entry.setBoolean(node.getValue()))) {
             return;
           }
           node.setValue(event.valueData.value.getBoolean());
@@ -173,6 +202,9 @@ public final class TypedNetworkTableSync {
           if (event.valueData == null) {
             return;
           }
+          if (rejectIfFmsAttached(() -> entry.setString(node.getValue()))) {
+            return;
+          }
           node.setValue(event.valueData.value.getString());
           onUpdate.run();
         });
@@ -188,6 +220,9 @@ public final class TypedNetworkTableSync {
           if (event.valueData == null) {
             return;
           }
+          if (rejectIfFmsAttached(() -> entry.setDoubleArray(node.getValue()))) {
+            return;
+          }
           node.setValue(event.valueData.value.getDoubleArray());
           onUpdate.run();
         });
@@ -201,6 +236,9 @@ public final class TypedNetworkTableSync {
         REMOTE_VALUE_EVENTS,
         event -> {
           if (event.valueData == null) {
+            return;
+          }
+          if (rejectIfFmsAttached(() -> entry.setDoubleArray(toDoubleArray(node.getValue())))) {
             return;
           }
           node.setValue(fromDoubleArray(event.valueData.value.getDoubleArray()));

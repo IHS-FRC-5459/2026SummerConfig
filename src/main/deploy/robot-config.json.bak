@@ -1,0 +1,63 @@
+{
+  "Arm": {
+    "type": "folder",
+    "value": {
+      "PIDController": {
+        "type": "PIDController",
+        "value": {
+          "p": {
+            "type": "double",
+            "value": 0.2
+          },
+          "i": {
+            "type": "double",
+            "value": 0.01
+          },
+          "d": {
+            "type": "double",
+            "value": 0.03
+          }
+        }
+      },
+      "Rotation": {
+        "type": "Rotation2d",
+        "value": {
+          "deg": {
+            "type": "double",
+            "value": 100.0
+          }
+        }
+      },
+      "Setpoints": {
+        "type": "double[]",
+        "value": [
+          0.0,
+          20.0,
+          45.0
+        ]
+      }
+    }
+  },
+  "Elevator": {
+    "type": "folder",
+    "value": {
+      "PIDController": {
+        "type": "PIDController",
+        "value": {
+          "p": {
+            "type": "double",
+            "value": 0.2
+          },
+          "i": {
+            "type": "double",
+            "value": 0.0
+          },
+          "d": {
+            "type": "double",
+            "value": 0.002
+          }
+        }
+      }
+    }
+  }
+}

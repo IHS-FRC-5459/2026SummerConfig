@@ -1,6 +1,7 @@
 package org.team5459.config;
 
 import edu.wpi.first.networktables.NetworkTableListener;
+import edu.wpi.first.wpilibj.DriverStation;
 import java.io.File;
 
 /**
@@ -58,8 +59,10 @@ public class ConfigManager {
         TypedNetworkTableSync.listen(
             document,
             () -> {
-              TypedConfigSaver.save(cacheFile, document);
-              System.out.println("Saved config cache: " + cacheFile.getAbsolutePath());
+              if (!DriverStation.isFMSAttached()) {
+                TypedConfigSaver.save(cacheFile, document);
+                System.out.println("Saved config cache: " + cacheFile.getAbsolutePath());
+              }
             });
     this.saveButtonListener =
         ConfigSaveButton.listen(saveTableName, saveEntryName, configFile, document);
