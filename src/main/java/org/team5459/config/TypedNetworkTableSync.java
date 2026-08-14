@@ -18,6 +18,10 @@ import org.team5459.config.types.*;
  * entries publish as individual NT values inside their parent table. The table layout therefore
  * mirrors JSON path structure: {@code Config/Arm/PIDController/p}.
  *
+ * <p>Composites that match an Elastic multi-topic widget (for example {@code PIDController}) also
+ * publish a Sendable-style {@code .type} string so Elastic can offer the correct widget. See {@link
+ * ConfigElasticTypes}.
+ *
  * <p>{@link #listen(ConfigDocument, Runnable)} attaches {@code kValueRemote} listeners to editable
  * scalar leaves. When a dashboard writes a new value, the in-memory node is updated and parent
  * composites call {@link CompositeConfigNode#applyFieldChanges()}. The optional {@code onUpdate}
@@ -39,6 +43,35 @@ public final class TypedNetworkTableSync {
     publishEntries(document.getRootEntries(), table);
   }
 
+  /**
+   * Unpublishes NetworkTables topics for {@code relativePath} and all nested topics under it (e.g.
+   * after a debug Delete). Stops Elastic/auto-register from seeing stale values.
+   */
+  public static void unpublishPath(String relativePath) {
+    if (relativePath == null || relativePath.isBlank()) {
+      return;
+    }
+    String normalized = relativePath.replace('\\', '/');
+    while (normalized.startsWith("/")) {
+      normalized = normalized.substring(1);
+    }
+    if (normalized.startsWith("Config/")) {
+      normalized = normalized.substring("Config/".length());
+    }
+    if (normalized.isBlank()) {
+      return;
+    }
+
+    NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    String exact = "/Config/" + normalized;
+    String prefix = exact + "/";
+    inst.getEntry(exact).unpublish();
+    for (edu.wpi.first.networktables.Topic topic : inst.getTopics(prefix)) {
+      inst.getEntry(topic.getName()).unpublish();
+    }
+    NetworkTableInstance.getDefault().flush();
+  }
+
   /** Creates listeners that apply remote NetworkTables edits to the document. */
   public static NetworkTableListener[] listen(ConfigDocument document) {
     return listen(document, () -> {});
@@ -53,14 +86,19 @@ public final class TypedNetworkTableSync {
   }
 
   private static void publishEntries(Map<String, ConfigNode> entries, NetworkTable table) {
-    entries.forEach((name, node) -> publishNode(node, name, table));
+    // Snapshot so NT publish callbacks cannot ConcurrentModificationException the live map.
+    for (Map.Entry<String, ConfigNode> entry : List.copyOf(entries.entrySet())) {
+      publishNode(entry.getValue(), entry.getKey(), table);
+    }
   }
 
   private static void publishNode(ConfigNode node, String name, NetworkTable table) {
     if (node instanceof FolderNode folder) {
       publishEntries(folder.getChildren(), table.getSubTable(name));
     } else if (node instanceof CompositeConfigNode composite) {
-      publishEntries(composite.getFields(), table.getSubTable(name));
+      NetworkTable subTable = table.getSubTable(name);
+      publishEntries(composite.getFields(), subTable);
+      publishElasticMetadata(composite, subTable);
     } else if (node instanceof DoubleNode doubleNode) {
       table.getEntry(name).setDouble(doubleNode.getValue());
     } else if (node instanceof IntNode intNode) {
@@ -75,6 +113,14 @@ public final class TypedNetworkTableSync {
       table.getEntry(name).setDoubleArray(toDoubleArray(arrayNode.getValue()));
     } else {
       ConfigWarnings.warnUnsupportedNetworkTablesType(name, node);
+    }
+  }
+
+  /** Publishes {@code .type} so Elastic can bind multi-topic widgets. */
+  private static void publishElasticMetadata(CompositeConfigNode composite, NetworkTable subTable) {
+    String elasticType = ConfigElasticTypes.elasticTypeFor(composite);
+    if (elasticType != null) {
+      subTable.getEntry(ConfigElasticTypes.TYPE_TOPIC).setString(elasticType);
     }
   }
 
@@ -95,12 +141,13 @@ public final class TypedNetworkTableSync {
     if (node instanceof FolderNode folder) {
       listenEntries(folder.getChildren(), table.getSubTable(name), onUpdate, listeners);
     } else if (node instanceof CompositeConfigNode composite) {
+      NetworkTable subTable = table.getSubTable(name);
       Runnable afterChildUpdate =
           () -> {
             composite.applyFieldChanges();
             onUpdate.run();
           };
-      listenEntries(composite.getFields(), table.getSubTable(name), afterChildUpdate, listeners);
+      listenEntries(composite.getFields(), subTable, afterChildUpdate, listeners);
     } else if (node instanceof DoubleNode doubleNode) {
       listeners.add(createDoubleListener(table.getEntry(name), doubleNode, onUpdate));
     } else if (node instanceof IntNode intNode) {

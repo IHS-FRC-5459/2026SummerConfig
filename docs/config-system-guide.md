@@ -24,26 +24,32 @@ A typed JSON configuration system for FRC robots. This guide explains how the li
 
 This library lets you:
 
-1. Store robot settings (PID gains, poses, feedforwards, etc.) in a **JSON file**
+1. Store robot settings (PID gains, poses, feedforwards, etc.) in a **JSON file** (defaults only)
 2. Load them at startup into a typed **`ConfigDocument`**
 3. Read values from robot code via **typed getters** (e.g. `getPIDController("Arm/PIDController")`)
-4. Publish values to **NetworkTables** (`/Config/...`) for live tuning from a dashboard (e.g. Elastic)
-5. **Autosave** tuned values to a cache file, then **commit** to the real config via a Save button
+4. Publish values to **NetworkTables** (`/Config/...`) for dashboards (e.g. Elastic)
+5. In **debug** mode only: accept NT edits, autosave `config-cache.json`, and **promote** to `robot-config.json` via Save or Save As file watch
+
+### Modes
+
+| Mode | When | Getters | NT edits | JSON writes |
+|------|------|---------|----------|-------------|
+| **Debug** | `!FMS` and `Config/DebugMode` | Live NT-backed document | Applied + cache autosave | Promote via `Config/Save` or `elastic-layout.json` content change |
+| **Match** | FMS attached, or DebugMode off | `robot-config.json` defaults | Ignored (publish only) | None |
+
+JSON is only for applying defaults at startup (and after promote). Live tuning is through NT in debug. Ship committed defaults with a normal code deploy — no SSH push required.
 
 ### Typical Workflow
 
 ```
-robot-config.json
+robot-config.json  →  defaults document
        ↓
-TypedConfigLoader.load()
+ConfigManager.publish → /Config/...
        ↓
-ConfigDocument  ←── robot code reads values here
+Debug: listen + cache autosave; getters → live/NT
+Match: ignore NT writebacks; getters → JSON defaults
        ↓
-TypedNetworkTableSync.publish()  →  /Config/... on NetworkTables
-       ↓
-Dashboard edits  →  TypedNetworkTableSync.listen()  →  autosave to config-cache.json
-       ↓
-ConfigSaveButton  →  commit to robot-config.json
+Promote (debug): Config/Save OR elastic-layout.json changed → robot-config.json
 ```
 
 ### Typical Robot Code
@@ -54,12 +60,14 @@ configManager = new ConfigManager(
     new File(Filesystem.getDeployDirectory(), "robot-config.json"),
     new File(Filesystem.getDeployDirectory(), "config-cache.json"));
 
+// In Robot.robotPeriodic()
+configManager.periodic();
+
 // In a subsystem constructor
 PIDController armPid = configManager.getDocument().getPIDController("Arm/PIDController");
 
 // In periodic()
 double output = armPid.calculate(setpoint, measurement);
-// Gains update automatically when tuned over NetworkTables
 ```
 
 ---

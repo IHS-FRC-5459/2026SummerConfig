@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.team5459.config.types.DoubleNode;
 
 /**
  * hhhh(for blank commit) Config entry whose JSON {@code value} is an object of named child nodes.
@@ -51,5 +52,13 @@ public abstract class CompositeConfigNode extends ConfigNode {
 
   protected ConfigFieldReader reader(String typeName) {
     return new ConfigFieldReader(fields, typeName);
+  }
+
+  /**
+   * Inserts a missing double child so older JSON without the field still persists it on the next
+   * save (defaults alone do not add map entries).
+   */
+  protected void ensureDoubleField(String name, double defaultValue) {
+    fields.putIfAbsent(name, new DoubleNode(defaultValue));
   }
 }

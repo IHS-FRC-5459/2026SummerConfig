@@ -1,91 +1,335 @@
 package org.team5459.config;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Owns the full lifecycle of a deploy-backed typed configuration: loading from disk, publishing to
- * NetworkTables, live-tuning autosave to a scratch cache file, and a dashboard Save button that
- * commits the cache into the real config file.
+ * Owns the lifecycle of deploy-backed typed configuration.
  *
- * <p>Typical usage from {@code Robot.robotInit()}:
+ * <h2>Modes</h2>
  *
- * <pre>{@code
- * private ConfigManager configManager;
+ * <ul>
+ *   <li><b>Debug</b> ({@code !FMS} and {@code Config/DebugMode == true}): NetworkTables edits
+ *       update the live document; getters read that NT-backed document; edits autosave to {@code
+ *       config-cache.json}. Promote to {@code robot-config.json} via the Save widget or when a
+ *       watched file (default {@code elastic-layout.json}) changes content (Elastic Save As). New
+ *       scalar topics under {@code /Config} are auto-registered (Elastic Custom + rebind).
+ *   <li><b>Match</b> (FMS attached, or DebugMode widget false): publish defaults to NT for display
+ *       only; ignore NT writebacks; do not write JSON; getters read the JSON defaults loaded at
+ *       startup.
+ * </ul>
  *
- * public void robotInit(){
- *   configManager = new ConfigManager(
- *     new File(Filesystem.getDeployDirectory(), "robot-config.json"),
- *   new File(Filesystem.getDeployDirectory(), "config-cache.json"));}
- * }</pre>
+ * <h2>Creating / deleting constants</h2>
  *
- * <p>Values tuned live from a dashboard (e.g. Elastic) autosave into the cache file immediately.
- * Pressing the Save button (default topic {@code Config/Save}) commits the current in-memory values
- * into the real config file. Robot code should read tuned values through {@link #getDocument()}
+ * <ul>
+ *   <li>Edit {@code robot-config.json} (and deploy).
+ *   <li>Debug Create panel: type + parent folder + name under {@code /Config/Create}, then Go.
+ *   <li>Debug Delete panel: path under {@code /Config/Delete}, then Go (folders remove children).
+ *   <li>Elastic Custom scalar → rebind topic to {@code /Config/...} (debug auto-register).
+ * </ul>
  */
 public class ConfigManager {
   private final File configFile;
   private final File cacheFile;
-  private final ConfigDocument document;
-  private final NetworkTableListener[] configListeners;
-  private final NetworkTableListener saveButtonListener;
+  private final File watchFile;
+  private final String saveTableName;
+  private final String saveEntryName;
+  private final ConfigDocument defaultsDocument;
+  private final ConfigDocument liveDocument;
+  private final ConfigDebugMode debugMode;
+  private final ConfigPromoteWatcher promoteWatcher;
 
-  /**
-   * Loads {@code configFile}, publishes it to NetworkTables, and wires up cache autosave plus the
-   * Save button under a custom table/entry name.
-   *
-   * @param configFile the committed config file, loaded at startup and written on Save
-   * @param cacheFile the scratch file that live-tuning autosaves into
-   * @param saveTableName NetworkTables table to publish the Save button under
-   * @param saveEntryName entry name within that table for the Save button
-   */
+  private final List<NetworkTableListener> configListeners = new ArrayList<>();
+  private ConfigSaveButton saveButton;
+  private ConfigDynamicRegistrar dynamicRegistrar;
+  private ConfigCreatePanel createPanel;
+  private ConfigDeletePanel deletePanel;
+  private boolean debugActive;
+  private boolean promoting;
+  private boolean autosaving;
+  private boolean suppressAutosave;
+  private boolean pendingStructureChange;
+
   public ConfigManager(File configFile, File cacheFile) {
+    this(configFile, cacheFile, sibling(configFile, "elastic-layout.json"));
+  }
+
+  public ConfigManager(File configFile, File cacheFile, File watchFile) {
     this(
         configFile,
         cacheFile,
+        watchFile,
         ConfigSaveButton.kDefaultTableName,
         ConfigSaveButton.kDefaultEntryName);
   }
 
   public ConfigManager(
-      File configFile, File cacheFile, String saveTableName, String saveEntryName) {
+      File configFile, File cacheFile, File watchFile, String saveTableName, String saveEntryName) {
     this.configFile = configFile;
     this.cacheFile = cacheFile;
-    this.document = TypedConfigLoader.load(configFile);
+    this.watchFile = watchFile;
+    this.saveTableName = saveTableName;
+    this.saveEntryName = saveEntryName;
+    this.defaultsDocument = TypedConfigLoader.load(configFile);
+    this.liveDocument = TypedConfigLoader.load(configFile);
+    this.debugMode = new ConfigDebugMode();
+    this.promoteWatcher = new ConfigPromoteWatcher(watchFile, this::promoteFromFileWatch);
+    this.promoteWatcher.poll();
 
-    TypedNetworkTableSync.publish(document);
-    this.configListeners =
-        TypedNetworkTableSync.listen(
-            document,
-            () -> {
-              TypedConfigSaver.save(cacheFile, document);
-              System.out.println("Saved config cache: " + cacheFile.getAbsolutePath());
-            });
-    this.saveButtonListener =
-        ConfigSaveButton.listen(saveTableName, saveEntryName, configFile, document);
-    System.out.println("Published typed config to NetworkTables under /Config");
+    TypedNetworkTableSync.publish(defaultsDocument);
+    this.saveButton =
+        new ConfigSaveButton(saveTableName, saveEntryName, this::promoteFromSaveButton);
+
+    if (debugMode.isDebug()) {
+      enableDebug();
+    } else {
+      debugActive = false;
+    }
   }
 
-  /** Returns the live typed configuration document. */
+  public void periodic() {
+    if (saveButton != null) {
+      saveButton.poll();
+    }
+
+    boolean wantDebug = debugMode.isDebug();
+    if (wantDebug != debugActive) {
+      if (wantDebug) {
+        enableDebug();
+      } else {
+        disableDebug();
+      }
+    }
+
+    if (debugActive) {
+      if (createPanel != null) {
+        createPanel.poll();
+      }
+      if (deletePanel != null) {
+        deletePanel.poll();
+      }
+      if (pendingStructureChange) {
+        pendingStructureChange = false;
+        applyDocumentStructureChange();
+      }
+      promoteWatcher.poll();
+      if (dynamicRegistrar != null) {
+        dynamicRegistrar.poll();
+      }
+    } else {
+      clearGoIfPulsed(
+          ConfigCreatePanel.TABLE,
+          ConfigCreatePanel.SUBTABLE,
+          ConfigCreatePanel.GO_ENTRY,
+          "Create");
+      clearGoIfPulsed(
+          ConfigDeletePanel.TABLE,
+          ConfigDeletePanel.SUBTABLE,
+          ConfigDeletePanel.GO_ENTRY,
+          "Delete");
+    }
+  }
+
+  private static void clearGoIfPulsed(String table, String sub, String goEntry, String label) {
+    var entry =
+        NetworkTableInstance.getDefault().getTable(table).getSubTable(sub).getEntry(goEntry);
+    if (entry.getBoolean(false)) {
+      entry.setBoolean(false);
+      ConfigWarnings.warn(label + " ignored: turn on Config/DebugMode first");
+    }
+  }
+
   public ConfigDocument getDocument() {
-    return document;
+    return debugActive ? liveDocument : defaultsDocument;
   }
 
-  /** Returns the committed config file (loaded at startup, written on Save). */
+  public boolean isDebugMode() {
+    return debugActive;
+  }
+
   public File getConfigFile() {
     return configFile;
   }
 
-  /** Returns the scratch cache file that live-tuning autosaves into. */
   public File getCacheFile() {
     return cacheFile;
   }
 
-  /** Closes the NetworkTable listeners. Call from a robot shutdown hook if one is used. */
+  public File getWatchFile() {
+    return watchFile;
+  }
+
+  public void promote() {
+    if (!debugActive) {
+      return;
+    }
+    if (promoting) {
+      return;
+    }
+    promoting = true;
+    try {
+      // Do not poll the dynamic registrar here: registration republishes the live document and can
+      // overwrite fresher Elastic values on NT before we pull.
+      NetworkTableInstance.getDefault().flush();
+      TypedNetworkTablePull.pull(liveDocument);
+      TypedConfigSaver.save(configFile, liveDocument);
+      TypedConfigSaver.save(cacheFile, liveDocument);
+      defaultsDocument.replaceRoot(TypedConfigLoader.load(configFile).getRootEntries());
+      System.out.println("[Config] Promoted live values to " + configFile.getAbsolutePath());
+    } finally {
+      promoting = false;
+    }
+  }
+
   public void close() {
+    disableDebugListenersOnly();
+    if (saveButton != null) {
+      saveButton.close();
+      saveButton = null;
+    }
+  }
+
+  private void enableDebug() {
+    debugMode.ensureTypedBoolean(true);
+    TypedConfigOverlay.apply(defaultsDocument, liveDocument);
+    TypedConfigOverlay.applyFile(cacheFile, liveDocument);
+    TypedNetworkTableSync.publish(liveDocument);
+    TypedNetworkTablePull.pull(liveDocument);
+    debugActive = true;
+    if (saveButton != null) {
+      saveButton.ensurePublished();
+    }
+    startConfigListeners();
+    startDynamicRegistrar();
+    startCreatePanel();
+    startDeletePanel();
+    System.out.println(
+        "[Config] Debug mode: getters use NetworkTables; autosaving " + cacheFile.getName());
+  }
+
+  private void disableDebug() {
+    disableDebugListenersOnly();
+    TypedNetworkTableSync.publish(defaultsDocument);
+    debugActive = false;
+    pendingStructureChange = false;
+    System.out.println(
+        "[Config] Match mode: getters use robot-config.json defaults; NT writebacks ignored");
+  }
+
+  private void startConfigListeners() {
+    closeConfigValueListeners();
+    // Initial setDouble/setBoolean while attaching listeners fires kValueLocal; ignore those so we
+    // do not recurse into autosave during Create/Delete structure updates.
+    suppressAutosave = true;
+    try {
+      NetworkTableListener[] listeners =
+          TypedNetworkTableSync.listen(liveDocument, this::autosaveCache);
+      for (NetworkTableListener listener : listeners) {
+        configListeners.add(listener);
+      }
+    } finally {
+      suppressAutosave = false;
+    }
+  }
+
+  private void startDynamicRegistrar() {
+    closeDynamicRegistrar();
+    dynamicRegistrar = new ConfigDynamicRegistrar(liveDocument, this::onDocumentStructureChanged);
+  }
+
+  private void startCreatePanel() {
+    closeCreatePanel();
+    createPanel = new ConfigCreatePanel(liveDocument, this::onDocumentStructureChanged);
+  }
+
+  private void startDeletePanel() {
+    closeDeletePanel();
+    deletePanel = new ConfigDeletePanel(liveDocument, this::onDocumentStructureChanged);
+  }
+
+  private void onDocumentStructureChanged() {
+    // Defer until after Create/Delete Go handling finishes so we do not close the pulse mid-press.
+    pendingStructureChange = true;
+  }
+
+  private void applyDocumentStructureChange() {
+    if (!debugActive) {
+      return;
+    }
+    TypedNetworkTableSync.publish(liveDocument);
+    startConfigListeners();
+    if (createPanel != null) {
+      createPanel.refreshFolderOptions();
+    }
+    if (deletePanel != null) {
+      deletePanel.refreshPathOptions();
+    }
+    if (saveButton != null) {
+      saveButton.ensurePublished();
+    }
+    autosaveCache();
+  }
+
+  private void autosaveCache() {
+    if (!debugActive || suppressAutosave || autosaving) {
+      return;
+    }
+    autosaving = true;
+    try {
+      TypedConfigSaver.save(cacheFile, liveDocument);
+    } finally {
+      autosaving = false;
+    }
+  }
+
+  private void disableDebugListenersOnly() {
+    closeConfigValueListeners();
+    closeDynamicRegistrar();
+    closeCreatePanel();
+    closeDeletePanel();
+  }
+
+  private void closeConfigValueListeners() {
     for (NetworkTableListener listener : configListeners) {
       listener.close();
     }
-    saveButtonListener.close();
+    configListeners.clear();
+  }
+
+  private void closeDynamicRegistrar() {
+    if (dynamicRegistrar != null) {
+      dynamicRegistrar.close();
+      dynamicRegistrar = null;
+    }
+  }
+
+  private void closeCreatePanel() {
+    if (createPanel != null) {
+      createPanel.close();
+      createPanel = null;
+    }
+  }
+
+  private void closeDeletePanel() {
+    if (deletePanel != null) {
+      deletePanel.close();
+      deletePanel = null;
+    }
+  }
+
+  private void promoteFromSaveButton() {
+    promote();
+  }
+
+  private void promoteFromFileWatch() {
+    promote();
+  }
+
+  private static File sibling(File file, String name) {
+    File parent = file.getParentFile();
+    return parent == null ? new File(name) : new File(parent, name);
   }
 }

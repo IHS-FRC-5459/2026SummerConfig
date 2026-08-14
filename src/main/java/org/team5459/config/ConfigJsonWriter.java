@@ -27,10 +27,12 @@ final class ConfigJsonWriter {
   private ConfigJsonWriter() {}
 
   static void write(File jsonFile, Map<String, ConfigNode> rootEntries) throws IOException {
+    // Snapshot so concurrent NT/create/delete edits cannot truncate the file mid-write.
+    Map<String, ConfigNode> snapshot = new java.util.LinkedHashMap<>(rootEntries);
     try (JsonGenerator generator =
         JSON_FACTORY.createGenerator(jsonFile, JsonEncoding.UTF8).useDefaultPrettyPrinter()) {
       generator.writeStartObject();
-      for (Map.Entry<String, ConfigNode> entry : rootEntries.entrySet()) {
+      for (Map.Entry<String, ConfigNode> entry : snapshot.entrySet()) {
         generator.writeFieldName(entry.getKey());
         writeNode(entry.getValue(), generator);
       }

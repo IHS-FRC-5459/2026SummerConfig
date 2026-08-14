@@ -1,64 +1,51 @@
 package org.team5459.config;
 
-import edu.wpi.first.networktables.NetworkTableEvent;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.NetworkTableListener;
-import java.io.File;
-import java.util.EnumSet;
-
 /**
- * Published a momentary "Save" button to the NetworkTables that commits a {@link ConfigDocument} to
- * a file when pressed.
+ * Momentary NetworkTables Save control that promotes the live debug document into {@code
+ * robot-config.json}.
  *
- * <p>Intended to pair with {@link TypedNetworkTableSync#listen(ConfigDocument, Runnable)}: bind the
- * sync listener's {@code onUpdate} callback to save into a scratch/cache file for live tuning, then
- * use this class to commit those in-memory values to the real config file only when a human
- * explicitly presses Save.
- *
- * <p>The underlying NetwordTables entry (default {@Config/Save}) is reset back to {@code false}
- * immediately after each press, so it behaves as a momentary trigger regardless of whether the
- * dashboard widget bound to it is a button or a toggle switch (CANNOT BE A BOOLEAN MUST ALWAYS
- * SWITCH TO A TOGGLE OR BUTTON TO WORK).
+ * <p>Uses a dashboard pulse ({@link ConfigDashboardPulse}): robot publishes a typed boolean so
+ * Elastic Toggle Button can write via {@code updateDataFromTopic}.
  */
-public final class ConfigSaveButton {
-  static final String kDefaultTableName = "Config";
-  static final String kDefaultEntryName = "Save";
+public final class ConfigSaveButton implements AutoCloseable {
+  public static final String kDefaultTableName = "Config";
+  public static final String kDefaultEntryName = "Save";
 
-  private ConfigSaveButton() {}
+  private final Runnable onSave;
+  private final ConfigDashboardPulse pulse;
 
-  /**
-   * Creates a save-button listener under the default {@code ConfigManager/Save} entry.
-   *
-   * @param configFile destination file to write on each press
-   * @param document configuration document to save
-   * @return the created listener; close it when no longer needed
-   */
-  public static NetworkTableListener listen(File configFile, ConfigDocument document) {
-    return listen(kDefaultTableName, kDefaultEntryName, configFile, document);
+  public ConfigSaveButton(String tableName, String entryName, Runnable onSave) {
+    this.onSave = onSave;
+    this.pulse = new ConfigDashboardPulse("/" + tableName + "/" + entryName, "Save");
+  }
+
+  /** Re-assert typed boolean publisher (call when entering debug). */
+  public void ensurePublished() {
+    pulse.ensureTypedBoolean();
+  }
+
+  /** No-op retained for call sites that previously forced Save=false. */
+  public void publish() {
+    ensurePublished();
   }
 
   /**
-   * Creates a save-button listener under a custom table/entry name.
+   * Detects a dashboard Save press. Call from robot periodic.
    *
-   * @param tableName NetworkTables table to publish the button under
-   * @param entryName entry name within that table
-   * @param configFile destination file to write on each press
-   * @param document configuration document to save
-   * @return the created listener; close it when no longer needed
+   * @return {@code true} if a press was handled this call
    */
-  public static NetworkTableListener listen(
-      String tableName, String entryName, File configFile, ConfigDocument document) {
-    var saveEntry = NetworkTableInstance.getDefault().getTable(tableName).getEntry(entryName);
-    saveEntry.setBoolean(false);
-    return NetworkTableListener.createListener(
-        saveEntry,
-        EnumSet.of(NetworkTableEvent.Kind.kValueRemote),
-        event -> {
-          if (event.valueData != null && event.valueData.value.getBoolean()) {
-            TypedConfigSaver.save(configFile, document);
-            System.out.println("Committed config: " + configFile.getAbsolutePath());
-            saveEntry.setBoolean(false);
-          }
-        });
+  public boolean poll() {
+    if (!pulse.pollRisingEdge()) {
+      return false;
+    }
+    if (onSave != null) {
+      onSave.run();
+    }
+    return true;
+  }
+
+  @Override
+  public void close() {
+    pulse.close();
   }
 }

@@ -71,12 +71,112 @@ public final class ConfigDocument {
   private final Map<String, ConfigNode> root;
 
   ConfigDocument(Map<String, ConfigNode> root) {
-    this.root = Collections.unmodifiableMap(new LinkedHashMap<>(root));
+    this.root = new LinkedHashMap<>(root);
   }
 
   /** Returns the node at the given path, or {@code null} if it does not exist. */
   public ConfigNode getNode(String path) {
     return ConfigPath.resolve(root, path);
+  }
+
+  /** Like {@link #getNode(String)} but does not log a warning when the path is missing. */
+  public ConfigNode getNodeQuiet(String path) {
+    return ConfigPath.resolveQuiet(root, path);
+  }
+
+  /** Returns whether a node already exists at {@code path} (no warning if missing). */
+  public boolean hasPath(String path) {
+    return ConfigPath.resolveQuiet(root, path) != null;
+  }
+
+  /**
+   * Inserts a leaf node at {@code path}, creating intermediate {@link FolderNode}s as needed.
+   *
+   * @return {@code true} if inserted, {@code false} if the path already exists or conflicts with a
+   *     non-folder intermediate segment
+   */
+  public boolean insertLeaf(String path, ConfigNode leaf) {
+    if (path == null || path.isBlank() || leaf == null) {
+      return false;
+    }
+    if (hasPath(path)) {
+      return false;
+    }
+
+    String[] parts = path.split("/");
+    Map<String, ConfigNode> current = root;
+
+    for (int index = 0; index < parts.length; index++) {
+      String part = parts[index];
+      if (part.isBlank()) {
+        return false;
+      }
+
+      boolean last = index == parts.length - 1;
+      if (last) {
+        current.put(part, leaf);
+        ConfigNode.initializeTree(leaf);
+        return true;
+      }
+
+      ConfigNode existing = current.get(part);
+      if (existing == null) {
+        FolderNode folder = new FolderNode(new LinkedHashMap<>());
+        current.put(part, folder);
+        current = folder.getChildEntries();
+      } else {
+        Map<String, ConfigNode> children = existing.getChildEntries();
+        if (children == null) {
+          ConfigWarnings.warn(
+              "Cannot insert '" + path + "': '" + part + "' is not a folder/composite");
+          return false;
+        }
+        current = children;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Removes the node at {@code path}. If it is a folder/composite, children are removed with it.
+   *
+   * @return {@code true} if a node was removed
+   */
+  public boolean removePath(String path) {
+    if (path == null || path.isBlank()) {
+      return false;
+    }
+    String[] parts = path.split("/");
+    if (parts.length == 0) {
+      return false;
+    }
+    Map<String, ConfigNode> current = root;
+    for (int index = 0; index < parts.length - 1; index++) {
+      String part = parts[index];
+      if (part.isBlank()) {
+        return false;
+      }
+      ConfigNode existing = current.get(part);
+      if (existing == null) {
+        return false;
+      }
+      Map<String, ConfigNode> children = existing.getChildEntries();
+      if (children == null) {
+        return false;
+      }
+      current = children;
+    }
+    String leaf = parts[parts.length - 1];
+    if (leaf.isBlank()) {
+      return false;
+    }
+    return current.remove(leaf) != null;
+  }
+
+  /** Replaces the entire root tree (used after promote reloads committed JSON). */
+  void replaceRoot(Map<String, ConfigNode> newRoot) {
+    root.clear();
+    root.putAll(newRoot);
   }
 
   public double getDouble(String path) {
@@ -420,7 +520,7 @@ public final class ConfigDocument {
 
   /** Root entries keyed by top-level JSON field names. Used by save and NetworkTables sync. */
   Map<String, ConfigNode> getRootEntries() {
-    return root;
+    return Collections.unmodifiableMap(root);
   }
 
   /**

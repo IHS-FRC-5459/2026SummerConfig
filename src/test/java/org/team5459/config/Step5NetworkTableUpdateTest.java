@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
+import org.team5459.config.types.DoubleNode;
 
 /**
  * Step 5 — remote NetworkTables edits and schema-only JSON save.
@@ -105,6 +106,41 @@ class Step5NetworkTableUpdateTest {
         document.getPIDController("Arm/PIDController").getP(),
         reloaded.getPIDController("Arm/PIDController").getP());
     assertEquals(document.getDouble("Arm/Rotation/deg"), reloaded.getDouble("Arm/Rotation/deg"));
+  }
+
+  @Test
+  void savesMissingPidSetpointField(@TempDir Path tempDirectory) throws Exception {
+    Path legacyFile = tempDirectory.resolve("legacy-pid.json");
+    Files.writeString(
+        legacyFile,
+        """
+        {
+          "Arm": {
+            "type": "folder",
+            "value": {
+              "PIDController": {
+                "type": "PIDController",
+                "value": {
+                  "p": { "type": "double", "value": 0.1 },
+                  "i": { "type": "double", "value": 0.0 },
+                  "d": { "type": "double", "value": 0.0 }
+                }
+              }
+            }
+          }
+        }
+        """);
+    ConfigDocument document = TypedConfigLoader.load(legacyFile.toFile());
+    assertEquals(0.0, document.getPIDController("Arm/PIDController").getSetpoint(), 1e-9);
+    assertTrue(document.getNode("Arm/PIDController/setpoint") instanceof DoubleNode);
+
+    Path savedFile = tempDirectory.resolve("saved-pid.json");
+    TypedConfigSaver.save(savedFile.toFile(), document);
+    String json = Files.readString(savedFile);
+    assertTrue(json.contains("\"setpoint\""), "Saved JSON must include materialized setpoint");
+
+    ConfigDocument reloaded = TypedConfigLoader.load(savedFile.toFile());
+    assertEquals(0.0, reloaded.getDouble("Arm/PIDController/setpoint"), 1e-9);
   }
 
   private void closeListeners() {

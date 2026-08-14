@@ -16,6 +16,10 @@ public final class ConfigWarnings {
 
   private ConfigWarnings() {}
 
+  public static void warn(String message) {
+    System.err.println("[Config] " + message);
+  }
+
   static void warnMissingPath(String path) {
     System.err.println("[Config] Missing entry at path '" + path + "'. Using default value.");
   }

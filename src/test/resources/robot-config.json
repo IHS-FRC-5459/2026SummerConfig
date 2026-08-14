@@ -16,6 +16,10 @@
           "d": {
             "type": "double",
             "value": 0.001
+          },
+          "setpoint": {
+            "type": "double",
+            "value": 0.0
           }
         }
       },
@@ -35,6 +39,10 @@
           20.0,
           45.0
         ]
+      },
+      "operatorOffset": {
+        "type": "double",
+        "value": 112.0
       }
     }
   },
@@ -55,8 +63,16 @@
           "d": {
             "type": "double",
             "value": 0.002
+          },
+          "setpoint": {
+            "type": "double",
+            "value": 0.0
           }
         }
+      },
+      "myBool": {
+        "type": "boolean",
+        "value": false
       }
     }
   }
