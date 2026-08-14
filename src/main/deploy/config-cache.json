@@ -5,6 +5,43 @@
       "hh" : {
         "type" : "int",
         "value" : 0
+      },
+      "myDouble" : {
+        "type" : "double",
+        "value" : 0.0
+      },
+      "myDouble2" : {
+        "type" : "double",
+        "value" : 0.0
+      },
+      "myInt" : {
+        "type" : "int",
+        "value" : 0
+      },
+      "myFolder2" : {
+        "type" : "folder",
+        "value" : { }
+      },
+      "hhhhh" : {
+        "type" : "PIDController",
+        "value" : {
+          "p" : {
+            "type" : "double",
+            "value" : 0.0
+          },
+          "i" : {
+            "type" : "double",
+            "value" : 0.0
+          },
+          "d" : {
+            "type" : "double",
+            "value" : 0.0
+          },
+          "setpoint" : {
+            "type" : "double",
+            "value" : 0.0
+          }
+        }
       }
     }
   }

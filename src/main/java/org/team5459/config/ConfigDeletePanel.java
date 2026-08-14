@@ -58,10 +58,17 @@ public final class ConfigDeletePanel implements AutoCloseable {
         readChooserSelection(delete.getSubTable(PATH_SUBTABLE), ConfigDeleteHelper.NONE_OPTION);
     boolean deleted = ConfigDeleteHelper.delete(document, path);
     if (deleted) {
+      ConfigNotifications.success("Deleted", "/Config/" + path);
       refreshPathOptions();
       if (onDeleted != null) {
         onDeleted.run();
       }
+    } else if (path == null
+        || path.isBlank()
+        || ConfigDeleteHelper.NONE_OPTION.equals(path.trim())) {
+      ConfigNotifications.failure("Delete failed", "No path selected");
+    } else {
+      ConfigNotifications.failure("Delete failed", "could not delete /Config/" + path);
     }
   }
 

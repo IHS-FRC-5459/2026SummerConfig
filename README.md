@@ -1,3 +1,5 @@
+For sim connecting to elastic, use 127.0.27.1
+
 # Config
 
 FRC robot project with a typed JSON configuration library (`org.team5459.config`).

@@ -180,6 +180,9 @@ class Step9TemplatesAndDynamicRegisterTest {
 
       assertTrue(manager.getDocument().hasPath(path), "Expected created /Config/" + path);
       assertEquals(0.0, manager.getDocument().getDouble(path), 1e-9);
+      String toast = lastNotification();
+      assertTrue(toast.contains("\"title\":\"Created\""), toast);
+      assertTrue(toast.contains("/Config/" + path), toast);
     } finally {
       manager.close();
     }
@@ -209,6 +212,72 @@ class Step9TemplatesAndDynamicRegisterTest {
 
       assertEquals("operatorOffset", create.getEntry(ConfigCreatePanel.NAME_ENTRY).getString(""));
       assertFalse(create.getEntry(ConfigCreatePanel.GO_ENTRY).getBoolean(true));
+      String toast = lastNotification();
+      assertTrue(toast.contains("\"title\":\"Create failed\""), toast);
+      assertTrue(toast.contains("already exists: /Config/Arm/operatorOffset"), toast);
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
+  void deletePanelNotifiesSuccess(@TempDir Path tempDirectory) throws Exception {
+    Path configFile = tempDirectory.resolve("robot-config.json");
+    Path cacheFile = tempDirectory.resolve("config-cache.json");
+    Path watchFile = tempDirectory.resolve("elastic-layout.json");
+    Files.copy(TEST_CONFIG, configFile);
+    Files.writeString(watchFile, "{\"version\":1}");
+    watchFile.toFile().setLastModified(System.currentTimeMillis() - 60_000);
+
+    NetworkTableInstance.getDefault().getTable("Config").getEntry("DebugMode").setBoolean(true);
+
+    ConfigManager manager =
+        new ConfigManager(configFile.toFile(), cacheFile.toFile(), watchFile.toFile());
+    try {
+      var delete =
+          NetworkTableInstance.getDefault()
+              .getTable(ConfigDeletePanel.TABLE)
+              .getSubTable(ConfigDeletePanel.SUBTABLE);
+      pulseDelete(delete, "Arm/operatorOffset");
+      manager.periodic();
+      NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
+
+      assertFalse(manager.getDocument().hasPath("Arm/operatorOffset"));
+      String toast = lastNotification();
+      assertTrue(toast.contains("\"title\":\"Deleted\""), toast);
+      assertTrue(toast.contains("/Config/Arm/operatorOffset"), toast);
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
+  void saveButtonNotifiesSuccess(@TempDir Path tempDirectory) throws Exception {
+    Path configFile = tempDirectory.resolve("robot-config.json");
+    Path cacheFile = tempDirectory.resolve("config-cache.json");
+    Path watchFile = tempDirectory.resolve("elastic-layout.json");
+    Files.copy(TEST_CONFIG, configFile);
+    Files.writeString(watchFile, "{\"version\":1}");
+    watchFile.toFile().setLastModified(System.currentTimeMillis() - 60_000);
+
+    NetworkTableInstance.getDefault().getTable("Config").getEntry("DebugMode").setBoolean(true);
+
+    ConfigManager manager =
+        new ConfigManager(configFile.toFile(), cacheFile.toFile(), watchFile.toFile());
+    try {
+      var save = NetworkTableInstance.getDefault().getTable("Config").getEntry("Save");
+      save.setBoolean(false);
+      NetworkTableInstance.getDefault().flush();
+      NetworkTableInstance.getDefault().waitForListenerQueue(0.5);
+      save.setBoolean(true);
+      NetworkTableInstance.getDefault().flush();
+      NetworkTableInstance.getDefault().waitForListenerQueue(2.0);
+      manager.periodic();
+      NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
+
+      String toast = lastNotification();
+      assertTrue(toast.contains("\"title\":\"Saved\""), toast);
+      assertTrue(toast.contains("robot-config.json"), toast);
     } finally {
       manager.close();
     }
@@ -255,5 +324,27 @@ class Step9TemplatesAndDynamicRegisterTest {
     create.getEntry(ConfigCreatePanel.GO_ENTRY).setBoolean(true);
     NetworkTableInstance.getDefault().flush();
     NetworkTableInstance.getDefault().waitForListenerQueue(2.0);
+  }
+
+  private static void pulseDelete(edu.wpi.first.networktables.NetworkTable delete, String path) {
+    delete.getEntry(ConfigDeletePanel.GO_ENTRY).setBoolean(false);
+    NetworkTableInstance.getDefault().flush();
+    NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
+
+    delete.getSubTable(ConfigDeletePanel.PATH_SUBTABLE).getEntry("selected").setString(path);
+    NetworkTableInstance.getDefault().flush();
+    NetworkTableInstance.getDefault().waitForListenerQueue(0.5);
+
+    delete.getEntry(ConfigDeletePanel.GO_ENTRY).setBoolean(true);
+    NetworkTableInstance.getDefault().flush();
+    NetworkTableInstance.getDefault().waitForListenerQueue(2.0);
+  }
+
+  private static String lastNotification() {
+    NetworkTableInstance.getDefault().waitForListenerQueue(0.5);
+    return NetworkTableInstance.getDefault()
+        .getTable("Elastic")
+        .getEntry("RobotNotifications")
+        .getString("");
   }
 }

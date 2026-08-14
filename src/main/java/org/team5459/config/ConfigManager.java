@@ -139,6 +139,7 @@ public class ConfigManager {
     if (entry.getBoolean(false)) {
       entry.setBoolean(false);
       ConfigWarnings.warn(label + " ignored: turn on Config/DebugMode first");
+      ConfigNotifications.failure(label + " failed", "Turn on DebugMode first");
     }
   }
 
@@ -321,7 +322,18 @@ public class ConfigManager {
   }
 
   private void promoteFromSaveButton() {
-    promote();
+    if (!debugActive) {
+      ConfigWarnings.warn("Save ignored: turn on Config/DebugMode first");
+      ConfigNotifications.failure("Save failed", "Turn on DebugMode first");
+      return;
+    }
+    try {
+      promote();
+      ConfigNotifications.success("Saved", "Promoted to robot-config.json");
+    } catch (RuntimeException exception) {
+      ConfigWarnings.warn("Save failed: " + exception.getMessage());
+      ConfigNotifications.error("Save failed", String.valueOf(exception.getMessage()));
+    }
   }
 
   private void promoteFromFileWatch() {

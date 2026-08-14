@@ -104,15 +104,23 @@ public final class ConfigCreatePanel implements AutoCloseable {
               + "', name='"
               + name
               + "'");
+      ConfigNotifications.failure("Create failed", "Publish a Name first (Enter or submit)");
       return;
     }
 
     if (ConfigCreateHelper.create(document, type, path)) {
+      ConfigNotifications.success("Created", type + " at /Config/" + path);
       clearForm();
       refreshFolderOptions();
       if (onCreated != null) {
         onCreated.run();
       }
+    } else {
+      String reason =
+          document.hasPath(path)
+              ? "already exists: /Config/" + path
+              : "could not create /Config/" + path;
+      ConfigNotifications.failure("Create failed", reason);
     }
   }
 
