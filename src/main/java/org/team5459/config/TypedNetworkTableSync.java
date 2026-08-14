@@ -16,7 +16,8 @@ import org.team5459.config.types.*;
  *
  * <p>Folder and composite entries publish as subtables under {@code /Config}. Scalar and array
  * entries publish as individual NT values inside their parent table. The table layout therefore
- * mirrors JSON path structure: {@code Config/Arm/PIDController/p}.
+ * mirrors JSON path structure: {@code Config/Arm/PIDController/p}. Empty folders still publish a
+ * {@code .type=Folder} marker so they exist on NetworkTables and appear in Elastic Add Widget.
  *
  * <p>Composites that match an Elastic multi-topic widget (for example {@code PIDController}) also
  * publish a Sendable-style {@code .type} string so Elastic can offer the correct widget. See {@link
@@ -41,6 +42,7 @@ public final class TypedNetworkTableSync {
   public static void publish(ConfigDocument document) {
     NetworkTable table = NetworkTableInstance.getDefault().getTable("Config");
     publishEntries(document.getRootEntries(), table);
+    NetworkTableInstance.getDefault().flush();
   }
 
   /**
@@ -94,7 +96,10 @@ public final class TypedNetworkTableSync {
 
   private static void publishNode(ConfigNode node, String name, NetworkTable table) {
     if (node instanceof FolderNode folder) {
-      publishEntries(folder.getChildren(), table.getSubTable(name));
+      // Empty NT tables are invisible. Publish .type so Elastic Add Widget can see the folder.
+      NetworkTable subTable = table.getSubTable(name);
+      publishEntries(folder.getChildren(), subTable);
+      publishElasticMetadata(folder, subTable);
     } else if (node instanceof CompositeConfigNode composite) {
       NetworkTable subTable = table.getSubTable(name);
       publishEntries(composite.getFields(), subTable);
@@ -116,9 +121,9 @@ public final class TypedNetworkTableSync {
     }
   }
 
-  /** Publishes {@code .type} so Elastic can bind multi-topic widgets. */
-  private static void publishElasticMetadata(CompositeConfigNode composite, NetworkTable subTable) {
-    String elasticType = ConfigElasticTypes.elasticTypeFor(composite);
+  /** Publishes {@code .type} so Elastic can bind multi-topic widgets (and see empty folders). */
+  private static void publishElasticMetadata(ConfigNode node, NetworkTable subTable) {
+    String elasticType = ConfigElasticTypes.elasticTypeFor(node);
     if (elasticType != null) {
       subTable.getEntry(ConfigElasticTypes.TYPE_TOPIC).setString(elasticType);
     }

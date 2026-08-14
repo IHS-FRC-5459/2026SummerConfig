@@ -1,6 +1,7 @@
 package org.team5459.config;
 
 import java.util.Map;
+import org.team5459.config.types.FolderNode;
 import org.team5459.config.types.PIDControllerNode;
 import org.team5459.config.types.ProfiledPIDControllerNode;
 
@@ -17,6 +18,7 @@ public final class ConfigElasticTypes {
 
   private static final Map<Class<? extends ConfigNode>, String> ELASTIC_TYPES =
       Map.of(
+          FolderNode.class, "Folder",
           PIDControllerNode.class, "PIDController",
           ProfiledPIDControllerNode.class, "ProfiledPIDController");
 

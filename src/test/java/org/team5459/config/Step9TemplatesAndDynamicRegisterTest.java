@@ -189,6 +189,53 @@ class Step9TemplatesAndDynamicRegisterTest {
   }
 
   @Test
+  void createPanelCreatesFolderVisibleOnNt(@TempDir Path tempDirectory) throws Exception {
+    Path configFile = tempDirectory.resolve("robot-config.json");
+    Path cacheFile = tempDirectory.resolve("config-cache.json");
+    Path watchFile = tempDirectory.resolve("elastic-layout.json");
+    Files.copy(TEST_CONFIG, configFile);
+    Files.writeString(watchFile, "{\"version\":1}");
+    watchFile.toFile().setLastModified(System.currentTimeMillis() - 60_000);
+
+    NetworkTableInstance.getDefault().getTable("Config").getEntry("DebugMode").setBoolean(true);
+
+    ConfigManager manager =
+        new ConfigManager(configFile.toFile(), cacheFile.toFile(), watchFile.toFile());
+    try {
+      String name = "folder_" + System.nanoTime();
+      var create =
+          NetworkTableInstance.getDefault()
+              .getTable(ConfigCreatePanel.TABLE)
+              .getSubTable(ConfigCreatePanel.SUBTABLE);
+      pulseCreate(create, ConfigCreateHelper.FOLDER_TYPE, "Arm", name);
+      manager.periodic();
+      NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
+      manager.periodic();
+      NetworkTableInstance.getDefault().waitForListenerQueue(1.0);
+
+      String path = "Arm/" + name;
+      assertTrue(manager.getDocument().hasPath(path));
+      assertEquals(
+          "Folder",
+          NetworkTableInstance.getDefault()
+              .getTable("Config")
+              .getSubTable("Arm")
+              .getSubTable(name)
+              .getEntry(".type")
+              .getString(""));
+      String[] folders =
+          create
+              .getSubTable(ConfigCreatePanel.FOLDER_SUBTABLE)
+              .getEntry("options")
+              .getStringArray(new String[0]);
+      assertTrue(
+          java.util.Arrays.asList(folders).contains(path), java.util.Arrays.toString(folders));
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
   void createPanelRejectsExistingWithoutClearingName(@TempDir Path tempDirectory) throws Exception {
     Path configFile = tempDirectory.resolve("robot-config.json");
     Path cacheFile = tempDirectory.resolve("config-cache.json");
