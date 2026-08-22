@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Troubleshooting — Team 5459 Config</title>
+    <link rel="icon" href="../assets/logo-5459.png" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="../index.html">
+          <img src="../assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="../index.html">Home</a>
+          <a href="../using-guide.html">Using guide</a>
+          <a href="../how-it-works.html">How it works</a>
+          <a href="index.html" aria-current="page">Tutorials</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb">
+        <a href="../index.html">Home</a> / <a href="index.html">Tutorials</a> / Troubleshooting
+      </p>
+      <h1>Troubleshooting</h1>
+      <p class="lead">Start with the Driver Station console — look for lines prefixed with <code>[Config]</code>.</p>
+
+      <div class="screenshot-slot">
+        <strong>Screenshot: Driver Station console with [Config] log lines</strong>
+        <span class="hint">Placeholder for your capture</span>
+      </div>
+
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Symptom</th>
+            <th>Likely cause / fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PID / values look like zero</td>
+            <td>
+              Missing path or missing composite field — check warnings and the exact path string.
+              Wrong getter type also returns that getter’s default.
+            </td>
+          </tr>
+          <tr>
+            <td>Getter returns zero but JSON looks fine</td>
+            <td>
+              Wrong getter (e.g. <code>getInt</code> on a double). Use the matching typed getter.
+            </td>
+          </tr>
+          <tr>
+            <td>Cannot tune from Elastic</td>
+            <td>
+              DebugMode off, or FMS attached (match mode). Only scalar/array leaves are NT-editable.
+            </td>
+          </tr>
+          <tr>
+            <td>Tuned values disappear after reboot</td>
+            <td>
+              You only wrote <code>config-cache.json</code>. Press Save, then deploy
+              <code>robot-config.json</code>.
+            </td>
+          </tr>
+          <tr>
+            <td>Create/Delete did nothing</td>
+            <td>Not in debug, or Go never pulsed true. Check notifications / console.</td>
+          </tr>
+          <tr>
+            <td>Layout / widgets look stale after Create/Delete</td>
+            <td>
+              Elastic does not auto-reload layout JSON — re-import or reopen
+              <code>elastic-layout.json</code>.
+            </td>
+          </tr>
+          <tr>
+            <td>Cannot find updated cache in sim</td>
+            <td>
+              Writes go to <code>Filesystem.getDeployDirectory()</code> (often under
+              <code>build/...</code>). Read the absolute path from
+              <code>[Config] Saved config cache:</code>.
+            </td>
+          </tr>
+          <tr>
+            <td>Robot crashes on startup loading config</td>
+            <td>
+              Invalid JSON or unknown <code>"type"</code> string — fix the file. This fails loudly
+              on purpose.
+            </td>
+          </tr>
+          <tr>
+            <td>Elastic cannot connect to sim</td>
+            <td>Try host <code>127.0.27.1</code> as noted in the project README.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        More reference:
+        <a href="../using-guide.html">Using guide</a>
+        ·
+        <a href="../how-it-works.html">How it works</a>
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="../index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>

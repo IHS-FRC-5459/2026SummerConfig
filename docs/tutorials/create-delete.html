@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Create and delete — Team 5459 Config</title>
+    <link rel="icon" href="../assets/logo-5459.png" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="../index.html">
+          <img src="../assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="../index.html">Home</a>
+          <a href="../using-guide.html">Using guide</a>
+          <a href="../how-it-works.html">How it works</a>
+          <a href="index.html" aria-current="page">Tutorials</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb">
+        <a href="../index.html">Home</a> / <a href="index.html">Tutorials</a> / Create and delete
+      </p>
+      <h1>Create and delete constants</h1>
+      <p class="lead">
+        Use the Elastic Create and Delete tabs in debug mode. Always Save afterward to promote into
+        <code>robot-config.json</code>.
+      </p>
+
+      <div class="note">
+        Debug must be on (<code>/Config/DebugMode</code>, not on FMS). Create/Delete panels only
+        apply structure changes in debug.
+      </div>
+
+      <h2>Create</h2>
+      <ol class="steps">
+        <li>Open the <strong>Create</strong> tab in your Elastic layout.</li>
+        <li>
+          Choose <strong>Type</strong> (<code>/Config/Create/Type</code>) — Folder, double, int,
+          PIDController, etc.
+        </li>
+        <li>
+          Choose <strong>Folder</strong> (<code>/Config/Create/Folder</code>) —
+          <code>(root)</code> or a nested folder path like <code>Claw/Intake</code>.
+        </li>
+        <li>
+          Enter <strong>Name</strong> (<code>/Config/Create/Name</code>) and submit if the widget
+          requires it.
+        </li>
+        <li>
+          Flip <strong>Go</strong> (<code>/Config/Create/Go</code>) on. The robot creates a
+          zero/empty default of that type (or an empty folder) and clears Go.
+        </li>
+      </ol>
+
+      <div class="screenshot-slot">
+        <strong>Screenshot: Elastic Create panel (Type, Folder, Name, Go)</strong>
+        <span class="hint">Placeholder for your capture</span>
+      </div>
+
+      <h2>Delete</h2>
+      <ol class="steps">
+        <li>Open the <strong>Delete</strong> tab.</li>
+        <li>
+          Choose <strong>Path</strong> (<code>/Config/Delete/Path</code>). Use
+          <code>(none)</code> to do nothing.
+        </li>
+        <li>
+          Flip <strong>Go</strong>. The path is removed from the live document / cache. Deleting a
+          folder removes all children.
+        </li>
+        <li>
+          Press <strong>Save</strong> on the Teleoperated tab to promote into
+          <code>robot-config.json</code>.
+        </li>
+      </ol>
+
+      <div class="screenshot-slot">
+        <strong>Screenshot: Elastic Delete panel (Path, Go)</strong>
+        <span class="hint">Placeholder for your capture</span>
+      </div>
+
+      <div class="callout warn">
+        Elastic does <strong>not</strong> auto-reload <code>elastic-layout.json</code>. After
+        Create/Delete (or layout edits on disk), re-import or reopen the layout so the dashboard
+        matches the robot.
+      </div>
+
+      <p>
+        You can also add entries by editing <code>robot-config.json</code> and deploying — useful
+        for large trees or CI.
+      </p>
+
+      <p>
+        Next:
+        <a href="robot-code.html">Read config from robot code</a>
+        ·
+        <a href="elastic-layout.html">Elastic layout</a>
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="../index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>

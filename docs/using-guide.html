@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Using guide — Team 5459 Config</title>
+    <link rel="icon" href="assets/logo-5459.png" />
+    <link rel="stylesheet" href="assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="index.html">
+          <img src="assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="index.html">Home</a>
+          <a href="using-guide.html" aria-current="page">Using guide</a>
+          <a href="how-it-works.html">How it works</a>
+          <a href="tutorials/index.html">Tutorials</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb"><a href="index.html">Home</a> / Using guide</p>
+      <h1>Using guide</h1>
+      <p class="lead">
+        Quick reference for files, modes, NetworkTables topics, and reading config from robot code.
+      </p>
+
+      <h2>Files</h2>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>robot-config.json</code></td>
+            <td>
+              Committed defaults in deploy. Loaded at startup. Written when you promote (Save or
+              Elastic Save As on the watched layout file).
+            </td>
+          </tr>
+          <tr>
+            <td><code>config-cache.json</code></td>
+            <td>
+              Debug scratch. Live NT edits autosave here. Not what you ship for match unless you
+              promote.
+            </td>
+          </tr>
+          <tr>
+            <td><code>elastic-layout.json</code></td>
+            <td>
+              Default watched file next to the config. Content changes (e.g. Elastic Save As) can
+              promote the live document into <code>robot-config.json</code>.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Modes</h2>
+      <table class="mode-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Debug</th>
+            <th>Match</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>When</strong></td>
+            <td><code>!FMS</code> and <code>/Config/DebugMode</code> true</td>
+            <td>FMS attached, or DebugMode false</td>
+          </tr>
+          <tr>
+            <td><strong>Getters</strong></td>
+            <td>Live NT-backed document</td>
+            <td>JSON defaults from <code>robot-config.json</code></td>
+          </tr>
+          <tr>
+            <td><strong>NT writes</strong></td>
+            <td>Applied + cache autosave</td>
+            <td>Ignored (publish for display only)</td>
+          </tr>
+          <tr>
+            <td><strong>JSON writes</strong></td>
+            <td>Cache always; promote to robot-config on Save / layout watch</td>
+            <td>None</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        See also the
+        <a href="tutorials/debug-and-match.html">debug and match tutorial</a>.
+      </p>
+
+      <h2>NetworkTables topics</h2>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Topic</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/Config/DebugMode</code></td>
+            <td>Toggle switch — enable debug when not on FMS</td>
+          </tr>
+          <tr>
+            <td><code>/Config/Save</code></td>
+            <td>Momentary button — promote live document to <code>robot-config.json</code></td>
+          </tr>
+          <tr>
+            <td><code>/Config/Create/Folder</code></td>
+            <td>Parent folder chooser (<code>(root)</code> or nested path)</td>
+          </tr>
+          <tr>
+            <td><code>/Config/Create/Type</code></td>
+            <td>Type chooser (Folder, scalars, composites)</td>
+          </tr>
+          <tr>
+            <td><code>/Config/Create/Name</code></td>
+            <td>New entry name (text with submit)</td>
+          </tr>
+          <tr>
+            <td><code>/Config/Create/Go</code></td>
+            <td>Pulse true to create; robot clears it</td>
+          </tr>
+          <tr>
+            <td><code>/Config/Delete/Path</code></td>
+            <td>Path chooser (<code>(none)</code> = no-op)</td>
+          </tr>
+          <tr>
+            <td><code>/Config/Delete/Go</code></td>
+            <td>Pulse true to delete; robot clears it</td>
+          </tr>
+          <tr>
+            <td><code>/Config/...</code></td>
+            <td>Your config tree — folders as subtables, scalars as entries</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Robot API</h2>
+      <p>Construct once in <code>robotInit</code>, call <code>periodic()</code> every loop:</p>
+      <pre><code>configManager = new ConfigManager(
+    new File(Filesystem.getDeployDirectory(), "robot-config.json"),
+    new File(Filesystem.getDeployDirectory(), "config-cache.json"));
+
+// robotPeriodic
+configManager.periodic();
+
+PIDController armPid =
+    configManager.getDocument().getPIDController("Arm/PIDController");</code></pre>
+      <p>
+        Paths use slash-separated names that mirror the JSON folder structure (e.g.
+        <code>Arm/PIDController/p</code>).
+      </p>
+
+      <h3>Live vs immutable values</h3>
+      <ul>
+        <li>
+          <strong>PID / ProfiledPID</strong> — fetch once and hold the reference. Gains update in
+          place when you tune in debug.
+        </li>
+        <li>
+          <strong>Poses, translations, scalars, feedforwards</strong> — call the getter when you need
+          the current value; composites rebuild when children change.
+        </li>
+      </ul>
+
+      <h2>Promoting cache → robot-config</h2>
+      <ol>
+        <li>Press <strong>Save</strong> on the dashboard (<code>/Config/Save</code>), or</li>
+        <li>
+          Change the content of the watched file (default <code>elastic-layout.json</code>, e.g.
+          Elastic Save As).
+        </li>
+      </ol>
+      <p>
+        Then commit/deploy <code>robot-config.json</code> so match mode and the next boot use the new
+        defaults.
+      </p>
+
+      <h2>Simulation notes</h2>
+      <ul>
+        <li>
+          For Elastic connecting to sim, use host <code>127.0.27.1</code> (see project README).
+        </li>
+        <li>
+          Cache writes go to <code>Filesystem.getDeployDirectory()</code> — often under
+          <code>build/...</code>, not necessarily <code>src/main/deploy</code>. Check the log line
+          <code>[Config] Saved config cache:</code> for the absolute path.
+        </li>
+      </ul>
+
+      <div class="note">
+        Elastic does <strong>not</strong> auto-reload layout JSON after Create/Delete UI changes —
+        re-import or reopen the layout file.
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>

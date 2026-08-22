@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Setup — Team 5459 Config</title>
+    <link rel="icon" href="../assets/logo-5459.png" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="../index.html">
+          <img src="../assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="../index.html">Home</a>
+          <a href="../using-guide.html">Using guide</a>
+          <a href="../how-it-works.html">How it works</a>
+          <a href="index.html" aria-current="page">Tutorials</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb">
+        <a href="../index.html">Home</a> / <a href="index.html">Tutorials</a> / Setup
+      </p>
+      <h1>Setup — ConfigManager and robot-config.json</h1>
+      <p class="lead">
+        Get the library loading JSON, publishing to NetworkTables, and running every robot loop.
+      </p>
+
+      <ol class="steps">
+        <li>
+          <strong>Put the package on your robot project.</strong>
+          Copy <code>org.team5459.config</code> (and its Jackson / WPILib dependencies) into your
+          vendor or source tree the same way this repo ships it, or clone this project and start from
+          here.
+        </li>
+        <li>
+          <strong>Add deploy JSON files.</strong>
+          Under <code>src/main/deploy/</code>, create at least:
+          <ul>
+            <li><code>robot-config.json</code> — committed defaults</li>
+            <li><code>config-cache.json</code> — can start as <code>{}</code> or a copy of defaults</li>
+          </ul>
+          Optional: copy
+          <a
+            href="https://github.com/IHS-FRC-5459/2026SummerConfig/blob/main/src/main/deploy/example-layout.json"
+            >example-layout.json</a
+          >
+          to <code>elastic-layout.json</code> for dashboard controls (see
+          <a href="elastic-layout.html">Elastic layout</a>).
+        </li>
+        <li>
+          <strong>Construct ConfigManager in robotInit.</strong>
+          <pre><code>@Override
+public void robotInit() {
+  configManager =
+      new ConfigManager(
+          new File(Filesystem.getDeployDirectory(), "robot-config.json"),
+          new File(Filesystem.getDeployDirectory(), "config-cache.json"));
+}</code></pre>
+        </li>
+        <li>
+          <strong>Call periodic every loop.</strong>
+          <pre><code>@Override
+public void robotPeriodic() {
+  if (configManager != null) {
+    configManager.periodic();
+  }
+  CommandScheduler.getInstance().run();
+}</code></pre>
+          This polls Save / Create / Delete, debug mode transitions, and the layout promote watcher.
+        </li>
+        <li>
+          <strong>Write a tiny typed JSON tree.</strong>
+          Every entry needs <code>type</code> and <code>value</code>:
+          <pre><code>{
+  "Arm": {
+    "type": "folder",
+    "value": {
+      "kP": { "type": "double", "value": 0.1 }
+    }
+  }
+}</code></pre>
+          Deploy and confirm <code>/Config/Arm/kP</code> appears in NetworkTables / Elastic.
+        </li>
+      </ol>
+
+      <div class="screenshot-slot">
+        <strong>Screenshot: NetworkTables or Elastic showing /Config after first deploy</strong>
+        <span class="hint">Drop a PNG later in <code>docs/assets/screenshots/</code></span>
+      </div>
+
+      <p>
+        Next:
+        <a href="elastic-tune.html">Tune values in Elastic</a>
+        ·
+        <a href="../using-guide.html">Using guide</a>
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="../index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>
