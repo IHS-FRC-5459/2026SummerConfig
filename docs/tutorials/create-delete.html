@@ -25,6 +25,7 @@
           <a href="../using-guide.html">Using guide</a>
           <a href="../how-it-works.html">How it works</a>
           <a href="index.html" aria-current="page">Tutorials</a>
+          <a href="../troubleshooting.html">Troubleshooting</a>
         </nav>
       </div>
     </header>
@@ -65,10 +66,18 @@
         </li>
       </ol>
 
-      <div class="screenshot-slot">
-        <strong>Screenshot: Elastic Create panel (Type, Folder, Name, Go)</strong>
-        <span class="hint">Placeholder for your capture</span>
-      </div>
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-create-panel.png"
+          alt="Elastic Create tab with Folder Arm, Type PIDController, Name armController, and Go"
+          width="1280"
+          height="720"
+        />
+        <figcaption>
+          Create panel — Folder, Type, Name, then Go (example: <code>Arm</code> /
+          <code>PIDController</code> / <code>armController</code>)
+        </figcaption>
+      </figure>
 
       <h2>Delete</h2>
       <ol class="steps">
@@ -87,16 +96,15 @@
         </li>
       </ol>
 
-      <div class="screenshot-slot">
-        <strong>Screenshot: Elastic Delete panel (Path, Go)</strong>
-        <span class="hint">Placeholder for your capture</span>
-      </div>
-
-      <div class="callout warn">
-        Elastic does <strong>not</strong> auto-reload <code>elastic-layout.json</code>. After
-        Create/Delete (or layout edits on disk), re-import or reopen the layout so the dashboard
-        matches the robot.
-      </div>
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-delete-panel.png"
+          alt="Elastic Delete tab with Path set to none and Go button"
+          width="1280"
+          height="720"
+        />
+        <figcaption>Delete panel — pick a Path, then Go (<code>(none)</code> is a no-op)</figcaption>
+      </figure>
 
       <p>
         You can also add entries by editing <code>robot-config.json</code> and deploying — useful

@@ -25,6 +25,7 @@
           <a href="../using-guide.html">Using guide</a>
           <a href="../how-it-works.html">How it works</a>
           <a href="index.html" aria-current="page">Tutorials</a>
+          <a href="../troubleshooting.html">Troubleshooting</a>
         </nav>
       </div>
     </header>
@@ -55,10 +56,15 @@
         </li>
       </ol>
 
-      <div class="screenshot-slot">
-        <strong>Screenshot: Elastic Teleoperated tab — DebugMode and Save</strong>
-        <span class="hint">Placeholder until you add a real capture</span>
-      </div>
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-debugmode-save.png"
+          alt="Elastic Teleoperated tab with DebugMode toggle on and Save button"
+          width="1280"
+          height="720"
+        />
+        <figcaption>Elastic Teleoperated tab — DebugMode and Save</figcaption>
+      </figure>
 
       <ol class="steps" start="4">
         <li>
@@ -79,15 +85,54 @@
         </li>
       </ol>
 
-      <div class="screenshot-slot">
-        <strong>Screenshot: a tuned scalar widget bound to /Config/...</strong>
-        <span class="hint">Placeholder for your Elastic capture</span>
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-tune-pid.png"
+          alt="Elastic Teleoperated tab with DebugMode, Save, and armController PID widget"
+          width="1280"
+          height="720"
+        />
+        <figcaption>
+          Tuning a PID under <code>/Config</code> (here <code>Arm/armController</code>)
+        </figcaption>
+      </figure>
+
+      <div class="callout warn">
+        <strong>Publish Values is Elastic’s button — not ours.</strong>
+        Widgets that show a <strong>Publish Values</strong> button (PIDController and similar) are
+        Elastic’s own UI. Edits in those fields are <em>not</em> sent to NetworkTables until you
+        click <strong>Publish Values</strong>. Only then does Config see them and autosave
+        <code>config-cache.json</code>. That still does <strong>not</strong> write
+        <code>robot-config.json</code> — use our <strong>Save</strong> widget
+        (<code>/Config/Save</code>) to promote.
+        <figure class="screenshot" style="margin-top: 1rem; margin-bottom: 0">
+          <img
+            src="../assets/screenshots/elastic-publish-values.png"
+            alt="armController widget with Publish Values button and green checkmark"
+            width="320"
+            height="480"
+            style="width: min(16rem, 100%); margin-inline: auto"
+          />
+          <figcaption>Click Publish Values before expecting Config / cache to update</figcaption>
+        </figure>
       </div>
 
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-add-widget-config.png"
+          alt="Elastic Add Widget dialog showing Config NetworkTables tree with Arm and armController"
+          width="1280"
+          height="720"
+        />
+        <figcaption>
+          Add Widget → Network Tables → expand <code>Config</code> to place widgets on your values
+        </figcaption>
+      </figure>
+
       <div class="callout">
-        <strong>Cache ≠ ship.</strong> Tuning only updates the cache until you Save (or trigger a
-        layout-file promote). Commit and deploy <code>robot-config.json</code> for the pit/match
-        robot.
+        <strong>Cache ≠ ship.</strong> After Publish Values (if the widget needs it), tuning only
+        updates the cache until you press our Save (or trigger a layout-file promote). Commit and
+        deploy <code>robot-config.json</code> for the pit/match robot.
       </div>
 
       <p>

@@ -25,6 +25,7 @@
           <a href="../using-guide.html">Using guide</a>
           <a href="../how-it-works.html">How it works</a>
           <a href="index.html" aria-current="page">Tutorials</a>
+          <a href="../troubleshooting.html">Troubleshooting</a>
         </nav>
       </div>
     </header>
@@ -39,12 +40,7 @@
       </p>
 
       <ol class="steps">
-        <li>
-          <strong>Put the package on your robot project.</strong>
-          Copy <code>org.team5459.config</code> (and its Jackson / WPILib dependencies) into your
-          vendor or source tree the same way this repo ships it, or clone this project and start from
-          here.
-        </li>
+        <li>[TODO: Add this part later]</li>
         <li>
           <strong>Add deploy JSON files.</strong>
           Under <code>src/main/deploy/</code>, create at least:
@@ -81,25 +77,7 @@ public void robotPeriodic() {
 }</code></pre>
           This polls Save / Create / Delete, debug mode transitions, and the layout promote watcher.
         </li>
-        <li>
-          <strong>Write a tiny typed JSON tree.</strong>
-          Every entry needs <code>type</code> and <code>value</code>:
-          <pre><code>{
-  "Arm": {
-    "type": "folder",
-    "value": {
-      "kP": { "type": "double", "value": 0.1 }
-    }
-  }
-}</code></pre>
-          Deploy and confirm <code>/Config/Arm/kP</code> appears in NetworkTables / Elastic.
-        </li>
       </ol>
-
-      <div class="screenshot-slot">
-        <strong>Screenshot: NetworkTables or Elastic showing /Config after first deploy</strong>
-        <span class="hint">Drop a PNG later in <code>docs/assets/screenshots/</code></span>
-      </div>
 
       <p>
         Next:

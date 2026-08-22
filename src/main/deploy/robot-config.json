@@ -1,18 +1,44 @@
 {
-  "random": {
-    "type": "folder",
-    "value": {
-      "hh": {
-        "type": "int",
-        "value": 0
+  "random" : {
+    "type" : "folder",
+    "value" : {
+      "hh" : {
+        "type" : "int",
+        "value" : 0
       },
-      "myDouble": {
-        "type": "double",
-        "value": 0.0
+      "myDouble" : {
+        "type" : "double",
+        "value" : 0.0
       },
-      "myDouble2": {
-        "type": "double",
-        "value": 0.0
+      "myDouble2" : {
+        "type" : "double",
+        "value" : 0.0
+      }
+    }
+  },
+  "Arm" : {
+    "type" : "folder",
+    "value" : {
+      "armController" : {
+        "type" : "PIDController",
+        "value" : {
+          "p" : {
+            "type" : "double",
+            "value" : 1.0
+          },
+          "i" : {
+            "type" : "double",
+            "value" : 3.0
+          },
+          "d" : {
+            "type" : "double",
+            "value" : 2.0
+          },
+          "setpoint" : {
+            "type" : "double",
+            "value" : 10.0
+          }
+        }
       }
     }
   }

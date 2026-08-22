@@ -25,6 +25,7 @@
           <a href="using-guide.html" aria-current="page">Using guide</a>
           <a href="how-it-works.html">How it works</a>
           <a href="tutorials/index.html">Tutorials</a>
+          <a href="troubleshooting.html">Troubleshooting</a>
         </nav>
       </div>
     </header>
@@ -183,6 +184,13 @@ PIDController armPid =
       </ul>
 
       <h2>Promoting cache → robot-config</h2>
+      <div class="callout warn">
+        <strong>Publish Values ≠ Save.</strong> Elastic widgets with a <strong>Publish Values</strong>
+        button (e.g. PIDController) only send NT updates when you click that button — Config then
+        can autosave <code>config-cache.json</code>. They never write
+        <code>robot-config.json</code>. Promote with our <code>/Config/Save</code> control (or the
+        layout-file watcher).
+      </div>
       <ol>
         <li>Press <strong>Save</strong> on the dashboard (<code>/Config/Save</code>), or</li>
         <li>
