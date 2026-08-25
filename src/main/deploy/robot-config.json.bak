@@ -1,0 +1,19 @@
+{
+  "random": {
+    "type": "folder",
+    "value": {
+      "hh": {
+        "type": "int",
+        "value": 0
+      },
+      "myDouble": {
+        "type": "double",
+        "value": 0.0
+      },
+      "myDouble2": {
+        "type": "double",
+        "value": 0.0
+      }
+    }
+  }
+}

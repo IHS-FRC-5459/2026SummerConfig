@@ -73,8 +73,8 @@ public class ConfigManager {
     this.watchFile = watchFile;
     this.saveTableName = saveTableName;
     this.saveEntryName = saveEntryName;
-    this.defaultsDocument = TypedConfigLoader.load(configFile);
-    this.liveDocument = TypedConfigLoader.load(configFile);
+    this.defaultsDocument = TypedConfigLoader.loadSafely(configFile);
+    this.liveDocument = TypedConfigLoader.loadSafely(configFile);
     this.debugMode = new ConfigDebugMode();
     this.promoteWatcher = new ConfigPromoteWatcher(watchFile, this::promoteFromFileWatch);
     this.promoteWatcher.poll();
@@ -176,9 +176,9 @@ public class ConfigManager {
       // overwrite fresher Elastic values on NT before we pull.
       NetworkTableInstance.getDefault().flush();
       TypedNetworkTablePull.pull(liveDocument);
-      TypedConfigSaver.save(configFile, liveDocument);
+      TypedConfigSaver.saveSafely(configFile, liveDocument);
       TypedConfigSaver.save(cacheFile, liveDocument);
-      defaultsDocument.replaceRoot(TypedConfigLoader.load(configFile).getRootEntries());
+      defaultsDocument.replaceRoot(TypedConfigLoader.loadSafely(configFile).getRootEntries());
       System.out.println("[Config] Promoted live values to " + configFile.getAbsolutePath());
     } finally {
       promoting = false;
