@@ -103,6 +103,7 @@ dependencies {
 test {
     useJUnitPlatform()
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+    systemProperty 'junit.jupiter.execution.parallel.enabled', 'false'
 }
 
 // Simulation configuration (e.g. environment variables).

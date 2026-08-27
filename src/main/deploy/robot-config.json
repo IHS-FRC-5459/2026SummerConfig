@@ -1,10 +1,10 @@
 {
-  "random" : {
-    "type" : "folder",
-    "value" : {
-      "h]" : {
-        "type" : "double",
-        "value" : 0.0
+  "random": {
+    "type": "folder",
+    "value": {
+      "h]": {
+        "type": "double",
+        "value": "Kansas"
       }
     }
   }
