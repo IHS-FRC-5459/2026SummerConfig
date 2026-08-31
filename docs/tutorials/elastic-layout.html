@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Elastic layout — Team 5459 Config</title>
+    <link rel="icon" href="../assets/logo-5459.png" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="../index.html">
+          <img src="../assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="../index.html">Home</a>
+          <a href="../using-guide.html">Using guide</a>
+          <a href="../how-it-works.html">How it works</a>
+          <a href="index.html" aria-current="page">Tutorials</a>
+          <a href="../troubleshooting.html">Troubleshooting</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb">
+        <a href="../index.html">Home</a> / <a href="index.html">Tutorials</a> / Elastic layout
+      </p>
+      <h1>Elastic layout file</h1>
+      <p class="lead">
+        This repo ships an example Elastic layout with Teleoperated, Create, and Delete tabs. Import
+        it, keep it next to your config as the promote watch file, and re-open it after structure
+        changes.
+      </p>
+
+      <h2>What example-layout.json contains</h2>
+      <ul>
+        <li>
+          <strong>Teleoperated</strong> — Toggle Switch on <code>/Config/DebugMode</code>, Toggle
+          Button on <code>/Config/Save</code>.
+        </li>
+        <li>
+          <strong>Create</strong> — List layout with Folder chooser, Type chooser, Name text, Go
+          button (<code>/Config/Create/...</code>).
+        </li>
+        <li>
+          <strong>Delete</strong> — Path chooser and Go (<code>/Config/Delete/...</code>).
+        </li>
+      </ul>
+      <p>
+        Source file in the repo:
+        <code>src/main/deploy/example-layout.json</code>. Copy or rename to
+        <code>elastic-layout.json</code> in deploy if you want the default
+        <code>ConfigManager</code> watch path (sibling of <code>robot-config.json</code>).
+      </p>
+
+      <h2>Import / update in Elastic</h2>
+      <ol class="steps">
+        <li>Open Elastic and import the JSON layout (or open the saved layout file).</li>
+        <li>Confirm topics match the table in the <a href="../using-guide.html">using guide</a>.</li>
+        <li>
+          After Create/Delete on the robot, or after editing the layout file on disk,
+          <strong>re-import or reopen</strong> the layout. Elastic does not auto-reload
+          <code>elastic-layout.json</code>.
+        </li>
+      </ol>
+
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-tune-pid.png"
+          alt="Elastic layout showing Teleoperated, Create, and Delete tabs with DebugMode and Save"
+          width="1280"
+          height="720"
+        />
+        <figcaption>
+          Example layout tabs: Teleoperated (DebugMode / Save), Create, and Delete
+        </figcaption>
+      </figure>
+
+      <h2>Promote via layout Save As</h2>
+      <p>
+        In debug, when the watched layout file’s <em>content</em> changes (for example Elastic Save
+        As overwriting <code>elastic-layout.json</code> on the deploy path the robot watches), the
+        library can promote the live document into <code>robot-config.json</code> — same idea as
+        pressing Save. Prefer the Save button when you only want to promote values, not change the
+        dashboard layout.
+      </p>
+
+      <p>
+        Next:
+        <a href="../troubleshooting.html">Troubleshooting</a>
+        ·
+        <a href="create-delete.html">Create and delete</a>
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="../index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Team 5459 Config — Typed JSON for FRC</title>
+    <meta
+      name="description"
+      content="Typed JSON configuration library for FRC robots: NetworkTables, Elastic tuning, and robot-code getters."
+    />
+    <link rel="icon" href="assets/logo-5459.png" />
+    <link rel="stylesheet" href="assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="index.html">
+          <img src="assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="index.html" aria-current="page">Home</a>
+          <a href="using-guide.html">Using guide</a>
+          <a href="how-it-works.html">How it works</a>
+          <a href="tutorials/index.html">Tutorials</a>
+          <a href="troubleshooting.html">Troubleshooting</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wide">
+      <section class="hero">
+        <div>
+          <h1>Typed JSON config for FRC robots</h1>
+          <p class="lead">
+            Store robot settings in JSON, publish them to NetworkTables under
+            <code>/Config</code>, tune live in Elastic during debug, and read typed values from
+            robot code. Built by
+            <a href="https://www.ipswich5459.com/">Team 5459 — Ipswich TIGERS</a>.
+          </p>
+          <p>
+            Ship committed defaults with a normal code deploy. In match mode, NetworkTables is
+            display-only so drivers cannot accidentally overwrite competition values.
+          </p>
+        </div>
+        <img
+          class="hero-logo"
+          src="assets/logo-5459.png"
+          alt="Team 5459 tiger with goggles logo"
+          width="180"
+          height="180"
+        />
+      </section>
+
+      <h2>Debug vs match (short version)</h2>
+      <table class="mode-table">
+        <thead>
+          <tr>
+            <th>Mode</th>
+            <th>When</th>
+            <th>Getters</th>
+            <th>NT edits / JSON</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Debug</strong></td>
+            <td>Not on FMS, and <code>/Config/DebugMode</code> on</td>
+            <td>Live NT-backed document</td>
+            <td>Edits applied; autosave to <code>config-cache.json</code>; promote with Save</td>
+          </tr>
+          <tr>
+            <td><strong>Match</strong></td>
+            <td>FMS attached, or DebugMode off</td>
+            <td><code>robot-config.json</code> defaults</td>
+            <td>NT publish only; no JSON writes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Start here</h2>
+      <div class="cards">
+        <a class="card" href="tutorials/setup.html">
+          <strong>1. Setup</strong>
+          <span>Wire ConfigManager into robotInit and deploy robot-config.json.</span>
+        </a>
+        <a class="card" href="tutorials/elastic-tune.html">
+          <strong>2. Tune in Elastic</strong>
+          <span>Turn on DebugMode, edit values, Save to promote.</span>
+        </a>
+        <a class="card" href="using-guide.html">
+          <strong>Using guide</strong>
+          <span>Files, NT topics, getters, and promote rules — quick lookup.</span>
+        </a>
+        <a class="card" href="tutorials/index.html">
+          <strong>All tutorials</strong>
+          <span>Create/delete, robot code, modes, and Elastic layout.</span>
+        </a>
+      </div>
+
+      <p>
+        Prefer a mental model first?
+        <a href="how-it-works.html">How it works</a> explains the JSON tree and NetworkTables
+        mirror without a class-by-class tour.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="using-guide.html">Using guide</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>

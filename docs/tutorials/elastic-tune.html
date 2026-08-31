@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tune in Elastic — Team 5459 Config</title>
+    <link rel="icon" href="../assets/logo-5459.png" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="../index.html">
+          <img src="../assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="../index.html">Home</a>
+          <a href="../using-guide.html">Using guide</a>
+          <a href="../how-it-works.html">How it works</a>
+          <a href="index.html" aria-current="page">Tutorials</a>
+          <a href="../troubleshooting.html">Troubleshooting</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb">
+        <a href="../index.html">Home</a> / <a href="index.html">Tutorials</a> / Tune in Elastic
+      </p>
+      <h1>Tune values in Elastic</h1>
+      <p class="lead">
+        Turn on debug, edit scalars under <code>/Config</code>, and understand cache vs Save.
+      </p>
+
+      <ol class="steps">
+        <li>
+          <strong>Import a layout with DebugMode and Save.</strong>
+          Use <code>example-layout.json</code> / <code>elastic-layout.json</code> (Teleoperated tab
+          has both widgets). See <a href="elastic-layout.html">Elastic layout</a>.
+        </li>
+        <li>
+          <strong>Connect Elastic</strong> to the robot or sim. For sim, the project README uses
+          host <code>127.0.27.1</code>.
+        </li>
+        <li>
+          <strong>Enable DebugMode</strong> with the toggle bound to
+          <code>/Config/DebugMode</code>. You must not be attached to FMS — otherwise the library
+          stays in match mode.
+        </li>
+      </ol>
+
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-debugmode-save.png"
+          alt="Elastic Teleoperated tab with DebugMode toggle on and Save button"
+          width="1280"
+          height="720"
+        />
+        <figcaption>Elastic Teleoperated tab — DebugMode and Save</figcaption>
+      </figure>
+
+      <ol class="steps" start="4">
+        <li>
+          <strong>Edit a scalar</strong> under <code>/Config/...</code> (number, boolean, string, or
+          array). Only leaves are editable over NT; folders and composite wrappers are structure.
+        </li>
+        <li>
+          <strong>Watch autosave.</strong> In debug, edits update the live document and write
+          <code>config-cache.json</code>. Look for
+          <code>[Config] Saved config cache:</code> in the console for the absolute path (in sim,
+          often under <code>build/</code>).
+        </li>
+        <li>
+          <strong>Promote with Save.</strong> Press the Save toggle/button
+          (<code>/Config/Save</code>) to write the live document into
+          <code>robot-config.json</code>. That is what match mode and the next cold boot will load
+          after you deploy.
+        </li>
+      </ol>
+
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-tune-pid.png"
+          alt="Elastic Teleoperated tab with DebugMode, Save, and armController PID widget"
+          width="1280"
+          height="720"
+        />
+        <figcaption>
+          Tuning a PID under <code>/Config</code> (here <code>Arm/armController</code>)
+        </figcaption>
+      </figure>
+
+      <div class="callout warn">
+        <strong>Publish Values is Elastic’s button — not ours.</strong>
+        Widgets that show a <strong>Publish Values</strong> button (PIDController and similar) are
+        Elastic’s own UI. Edits in those fields are <em>not</em> sent to NetworkTables until you
+        click <strong>Publish Values</strong>. Only then does Config see them and autosave
+        <code>config-cache.json</code>. That still does <strong>not</strong> write
+        <code>robot-config.json</code> — use our <strong>Save</strong> widget
+        (<code>/Config/Save</code>) to promote.
+        <figure class="screenshot" style="margin-top: 1rem; margin-bottom: 0">
+          <img
+            src="../assets/screenshots/elastic-publish-values.png"
+            alt="armController widget with Publish Values button and green checkmark"
+            width="320"
+            height="480"
+            style="width: min(16rem, 100%); margin-inline: auto"
+          />
+          <figcaption>Click Publish Values before expecting Config / cache to update</figcaption>
+        </figure>
+      </div>
+
+      <figure class="screenshot">
+        <img
+          src="../assets/screenshots/elastic-add-widget-config.png"
+          alt="Elastic Add Widget dialog showing Config NetworkTables tree with Arm and armController"
+          width="1280"
+          height="720"
+        />
+        <figcaption>
+          Add Widget → Network Tables → expand <code>Config</code> to place widgets on your values
+        </figcaption>
+      </figure>
+
+      <div class="callout">
+        <strong>Cache ≠ ship.</strong> After Publish Values (if the widget needs it), tuning only
+        updates the cache until you press our Save (or trigger a layout-file promote). Commit and
+        deploy <code>robot-config.json</code> for the pit/match robot.
+      </div>
+
+      <p>
+        Next:
+        <a href="create-delete.html">Create and delete constants</a>
+        ·
+        <a href="debug-and-match.html">Debug vs match</a>
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="../index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>

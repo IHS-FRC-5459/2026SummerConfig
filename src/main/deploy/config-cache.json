@@ -7,5 +7,13 @@
         "value": 0.0
       }
     }
+  },
+  "Arm" : {
+    "type" : "folder",
+    "value" : { }
+  },
+  "myDouble" : {
+    "type" : "double",
+    "value" : 0.0
   }
 }

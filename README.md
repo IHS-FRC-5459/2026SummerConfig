@@ -30,7 +30,7 @@ Sim cache writes go to the deploy directory returned by `Filesystem.getDeployDir
 
 ## Documentation
 
-**[Config System Developer Guide](docs/config-system-guide.md)** — library overview and file-by-file reference.
+**[Config docs site](https://ihs-frc-5459.github.io/2026SummerConfig/)** — tutorials and using guide (GitHub Pages from `docs/`). Open `docs/index.html` locally if you prefer.
 
 ## Quick start
 

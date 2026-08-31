@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Debug vs match — Team 5459 Config</title>
+    <link rel="icon" href="../assets/logo-5459.png" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="../index.html">
+          <img src="../assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="../index.html">Home</a>
+          <a href="../using-guide.html">Using guide</a>
+          <a href="../how-it-works.html">How it works</a>
+          <a href="index.html" aria-current="page">Tutorials</a>
+          <a href="../troubleshooting.html">Troubleshooting</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb">
+        <a href="../index.html">Home</a> / <a href="index.html">Tutorials</a> / Debug vs match
+      </p>
+      <h1>Debug vs match mode</h1>
+      <p class="lead">
+        Same dashboard, different rules. Match mode protects competition values; debug mode lets
+        you tune and create.
+      </p>
+
+      <table class="mode-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Debug</th>
+            <th>Match</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Condition</strong></td>
+            <td>Not on FMS <em>and</em> <code>/Config/DebugMode</code> true</td>
+            <td>FMS attached <em>or</em> DebugMode false</td>
+          </tr>
+          <tr>
+            <td><strong>Getters</strong></td>
+            <td>Live NT-backed document</td>
+            <td>Defaults loaded from <code>robot-config.json</code></td>
+          </tr>
+          <tr>
+            <td><strong>NT edits</strong></td>
+            <td>Applied; parents sync (e.g. PID gains)</td>
+            <td>Ignored</td>
+          </tr>
+          <tr>
+            <td><strong>JSON</strong></td>
+            <td>Autosave cache; promote with Save / layout watch</td>
+            <td>No writes</td>
+          </tr>
+          <tr>
+            <td><strong>Create / Delete</strong></td>
+            <td>Enabled</td>
+            <td>Not applied</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Typical pit workflow</h2>
+      <ol>
+        <li>Not connected to FMS. Turn <strong>DebugMode</strong> on.</li>
+        <li>Tune scalars; confirm robot behavior (getters see live values).</li>
+        <li>Press <strong>Save</strong> to write <code>robot-config.json</code>.</li>
+        <li>Commit / deploy that file so the competition robot has the new defaults.</li>
+        <li>
+          At the event, leave DebugMode off (or accept that FMS forces match). Dashboard still
+          <em>shows</em> values; edits do not change what code uses.
+        </li>
+      </ol>
+
+      <div class="callout warn">
+        If you only autosave to cache and never Save + deploy, the next boot (and match mode) still
+        uses the old committed <code>robot-config.json</code>.
+      </div>
+
+      <p>
+        Next:
+        <a href="elastic-layout.html">Elastic layout</a>
+        ·
+        <a href="../using-guide.html">Using guide</a>
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="../index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>

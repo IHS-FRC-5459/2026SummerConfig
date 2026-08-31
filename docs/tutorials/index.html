@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tutorials — Team 5459 Config</title>
+    <link rel="icon" href="../assets/logo-5459.png" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="../index.html">
+          <img src="../assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="../index.html">Home</a>
+          <a href="../using-guide.html">Using guide</a>
+          <a href="../how-it-works.html">How it works</a>
+          <a href="index.html" aria-current="page">Tutorials</a>
+          <a href="../troubleshooting.html">Troubleshooting</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb"><a href="../index.html">Home</a> / Tutorials</p>
+      <h1>Tutorials</h1>
+      <p class="lead">Follow these in order the first time; jump around once you know the workflow.</p>
+
+      <ol class="tutorial-list">
+        <li>
+          <a href="setup.html">1. Setup — ConfigManager and robot-config.json</a>
+          <p>Wire the library into robotInit / robotPeriodic and deploy a typed JSON file.</p>
+        </li>
+        <li>
+          <a href="elastic-tune.html">2. Tune values in Elastic</a>
+          <p>DebugMode, editing scalars, cache autosave vs Save promote.</p>
+        </li>
+        <li>
+          <a href="create-delete.html">3. Create and delete constants</a>
+          <p>Use the Create and Delete dashboard panels, then Save to promote.</p>
+        </li>
+        <li>
+          <a href="robot-code.html">4. Read config from robot code</a>
+          <p>Paths, typed getters, hold PID vs re-read poses.</p>
+        </li>
+        <li>
+          <a href="debug-and-match.html">5. Debug vs match mode</a>
+          <p>FMS, DebugMode, what getters and JSON writes do in each mode.</p>
+        </li>
+        <li>
+          <a href="elastic-layout.html">6. Elastic layout file</a>
+          <p>Import example-layout.json / elastic-layout.json and re-import after changes.</p>
+        </li>
+      </ol>
+
+      <p>
+        Stuck? See
+        <a href="../troubleshooting.html">Troubleshooting</a>.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="../index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>

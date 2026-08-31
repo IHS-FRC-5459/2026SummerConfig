@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How it works — Team 5459 Config</title>
+    <link rel="icon" href="assets/logo-5459.png" />
+    <link rel="stylesheet" href="assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="index.html">
+          <img src="assets/logo-5459.png" alt="Team 5459 Tigers logo" width="44" height="44" />
+          <div class="brand-text">
+            <strong>Team 5459 TIGERS</strong>
+            <span>Config</span>
+          </div>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu
+        </button>
+        <nav id="site-nav" class="site-nav">
+          <a href="index.html">Home</a>
+          <a href="using-guide.html">Using guide</a>
+          <a href="how-it-works.html" aria-current="page">How it works</a>
+          <a href="tutorials/index.html">Tutorials</a>
+          <a href="troubleshooting.html">Troubleshooting</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p class="breadcrumb"><a href="index.html">Home</a> / How it works</p>
+      <h1>How it works</h1>
+      <p class="lead">
+        A short mental model of the library — enough to adapt it on your team, without a
+        file-by-file tour.
+      </p>
+
+      <h2>JSON shape</h2>
+      <p>
+        Every entry is a <code>{ "type", "value" }</code> envelope. <code>type</code> picks the node
+        class (double, PIDController, folder, …). <code>value</code> is a primitive, an array, or a
+        nested map of child entries.
+      </p>
+      <pre><code>{
+  "Arm": {
+    "type": "folder",
+    "value": {
+      "PIDController": {
+        "type": "PIDController",
+        "value": {
+          "p": { "type": "double", "value": 0.1 },
+          "i": { "type": "double", "value": 0.01 },
+          "d": { "type": "double", "value": 0.001 }
+        }
+      }
+    }
+  }
+}</code></pre>
+      <p>
+        Paths like <code>Arm/PIDController/p</code> walk that tree. Folders group; composites
+        (PID, Pose2d, …) hold named fields; scalars/arrays are leaves editable over NetworkTables.
+      </p>
+
+      <h2>Runtime flow</h2>
+      <ol>
+        <li>
+          <code>ConfigManager</code> loads <code>robot-config.json</code> into a typed document and
+          publishes under <code>/Config</code>.
+        </li>
+        <li>
+          In <strong>debug</strong>, NT edits update the live tree and autosave
+          <code>config-cache.json</code>. Getters read that live document.
+        </li>
+        <li>
+          In <strong>match</strong>, NT is display-only. Getters read the JSON defaults from startup.
+          No JSON writes.
+        </li>
+        <li>
+          Promote with <code>/Config/Save</code> or when the watched layout file content changes —
+          that writes <code>robot-config.json</code>.
+        </li>
+        <li>
+          Subsystems use <code>ConfigDocument</code> typed getters
+          (<code>getDouble</code>, <code>getPIDController</code>, <code>getPose2d</code>, …).
+        </li>
+      </ol>
+
+      <h2>Live PID vs rebuilt pose</h2>
+      <ul>
+        <li>
+          <strong>Live composites</strong> (PID, ProfiledPID) keep one WPILib object and update it
+          in place so a subsystem can hold a reference across loops.
+        </li>
+        <li>
+          <strong>Immutable composites</strong> (Pose2d, feedforwards, units, …) rebuild a fresh
+          value when a child scalar changes — call the getter when you need the current object.
+        </li>
+      </ul>
+
+      <h2>Errors: warn vs fail</h2>
+      <ul>
+        <li>
+          <strong>Warn and continue</strong> — missing path, wrong getter type, missing composite
+          field. Logs to <code>System.err</code> with a <code>[Config]</code> prefix and returns a
+          safe default so a typo does not crash the robot.
+        </li>
+        <li>
+          <strong>Fail loudly</strong> — missing/invalid JSON file, unknown <code>type</code>
+          string. Startup should not pretend a broken file is fine.
+        </li>
+      </ul>
+      <p>
+        Look for <code>[Config]</code> in the Driver Station console when values look wrong. See
+        <a href="troubleshooting.html">troubleshooting</a>.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="links">
+        <a href="https://github.com/IHS-FRC-5459/2026SummerConfig">GitHub</a>
+        <a href="https://www.ipswich5459.com/">Team 5459 site</a>
+        <a href="index.html">Home</a>
+      </div>
+      <p>org.team5459.config — Ipswich High School FRC Team 5459</p>
+    </footer>
+
+    <script>
+      (function () {
+        var btn = document.querySelector(".nav-toggle");
+        var nav = document.getElementById("site-nav");
+        if (!btn || !nav) return;
+        btn.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      })();
+    </script>
+  </body>
+</html>
